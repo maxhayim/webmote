@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 16:9 banner: a phone with a D-pad, beside the name. Own art. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#12151C" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#262B38" android:pathData="M62,30h64a10,10 0,0 1,10 10v100a10,10 0,0 1,-10 10h-64a10,10 0,0 1,-10 -10v-100a10,10 0,0 1,10 -10z" />
+    <path android:strokeColor="#3A4152" android:strokeWidth="6" android:fillColor="#00000000"
+        android:pathData="M94,62a22,22 0,1 1,0 44a22,22 0,1 1,0 -44z" />
+    <path android:fillColor="#8FA8FF" android:pathData="M94,74a10,10 0,1 1,0 20a10,10 0,1 1,0 -20z" />
+    <path android:fillColor="#E6E9F2" android:pathData="M160,78h120v8h-120zM160,96h80v6h-80z" />
+</vector>

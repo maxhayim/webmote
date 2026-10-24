@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Webmote</title>
+<meta name="theme-color" content="#0e1016">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Webmote">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+:root {
+  --bg: #0e1016; --surface: #1a1e28; --surface-2: #232836; --press: #2e3446;
+  --line: #2a3040; --text: #e9ecf3; --muted: #8b93a7; --accent: #8fa8ff; --accent-ink: #0e1016;
+  --danger: #ff7b7b; --radius: 22px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { touch-action: manipulation; -webkit-user-select: none; user-select: none; overscroll-behavior: none; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.app { min-height: 100dvh; max-width: 440px; margin: 0 auto; display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 18px); gap: 22px; }
+.hidden { display: none !important; }
+
+/* Top bar */
+.top { display: flex; align-items: center; gap: 12px; }
+.who { flex: 1; min-width: 0; }
+.who b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who span { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #4ad07a; flex: none; }
+.dot.off { background: var(--danger); }
+.icon { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); }
+.icon:active, .icon.on { background: var(--press); }
+.power { color: var(--danger); position: relative; }
+.power .ring { position: absolute; inset: -3px; border-radius: 50%; border: 3px solid var(--danger);
+  clip-path: inset(0 100% 0 0); transition: none; }
+.power.holding .ring { clip-path: inset(0 0 0 0); transition: clip-path .9s linear; }
+
+/* D-pad */
+.pad { position: relative; width: min(78vw, 300px); aspect-ratio: 1; margin: 8px auto 0; border-radius: 50%;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.pad .arrow { position: absolute; display: grid; place-items: center; color: var(--muted); }
+.pad .arrow:active, .pad .arrow.on { color: var(--text); }
+.pad .arrow svg { width: 30px; height: 30px; }
+.pad .up, .pad .down { left: 30%; width: 40%; height: 30%; }
+.pad .up { top: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.pad .down { bottom: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+.pad .left, .pad .right { top: 30%; height: 40%; width: 30%; }
+.pad .left { left: 0; border-radius: 50% 0 0 50% / 50% 0 0 50%; }
+.pad .right { right: 0; border-radius: 0 50% 50% 0 / 0 50% 50% 0; }
+.pad .arrow:active::before, .pad .arrow.on::before { content: ""; position: absolute; inset: 8%; border-radius: inherit; background: var(--press); z-index: -1; }
+.pad .ok { position: absolute; left: 31%; top: 31%; width: 38%; height: 38%; border-radius: 50%;
+  background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); font-weight: 600; letter-spacing: .04em; }
+.pad .ok:active, .pad .ok.on { background: var(--accent); color: var(--accent-ink); }
+
+/* Button rows */
+.row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.round { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
+.round:active, .round.on { background: var(--press); }
+.round svg { width: 26px; height: 26px; }
+.rocker { display: flex; flex-direction: column; width: 64px; border-radius: 32px; background: var(--surface); overflow: hidden; }
+.rocker button { height: 64px; display: grid; place-items: center; }
+.rocker button:active, .rocker button.on { background: var(--press); }
+.rocker .label { font-size: 11px; color: var(--muted); text-align: center; letter-spacing: .08em; }
+.mid { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.vol { height: 4px; width: 120px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.vol i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+.vol.muted i { background: var(--muted); }
+.voltext { font-size: 12px; color: var(--muted); }
+.chips { display: flex; gap: 12px; margin-top: auto; }
+.chip { flex: 1; height: 54px; border-radius: 18px; background: var(--surface); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.chip:active, .chip.on { background: var(--press); }
+.hint { color: var(--muted); font-size: 12px; text-align: center; }
+@media (hover: none) { .hint { display: none; } }
+
+/* Sheets */
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; z-index: 5; }
+.sheet { width: 100%; max-width: 480px; max-height: 80dvh; display: flex; flex-direction: column; background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0; padding: 18px 18px calc(env(safe-area-inset-bottom) + 18px); }
+.sheet h2 { margin: 0 0 12px; font-size: 17px; display: flex; justify-content: space-between; align-items: center; }
+.apps { overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.app-tile { display: flex; flex-direction: column; gap: 6px; align-items: stretch; text-align: left; }
+.app-tile .art { aspect-ratio: 16 / 9; border-radius: 12px; background: var(--surface-2) center / contain no-repeat; }
+.app-tile:active .art { outline: 2px solid var(--accent); }
+.app-tile span { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+input { font: inherit; font-size: 17px; width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--text); outline: none; -webkit-user-select: text; user-select: text; }
+input:focus { border-color: var(--accent); }
+.note { color: var(--muted); font-size: 13px; margin: 10px 2px 0; min-height: 18px; }
+.primary { margin-top: 14px; height: 52px; border-radius: 16px; background: var(--accent); color: var(--accent-ink); font-weight: 600; width: 100%; }
+.primary:disabled { opacity: .5; }
+
+/* Pairing */
+.pair { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.pair h1 { font-size: 28px; margin: 0; }
+.pair p { color: var(--muted); margin: 0 0 18px; }
+.pin { letter-spacing: .5em; text-align: center; font-size: 26px; font-variant-numeric: tabular-nums; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 24px); transform: translateX(-50%);
+  background: var(--surface-2); padding: 10px 16px; border-radius: 12px; font-size: 14px; z-index: 9; box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section id="pair" class="pair hidden">
+    <h1>Webmote</h1>
+    <p>Open Webmote on the TV to see its PIN, and type it here. This browser stays paired.</p>
+    <input id="pin" class="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="PIN">
+    <div id="pairNote" class="note" role="status"></div>
+    <button id="pairBtn" class="primary" disabled>Pair</button>
+  </section>
+
+  <section id="remote" class="hidden" style="display:contents">
+    <div class="top">
+      <button id="power" class="icon power" aria-label="Turn off (hold)" title="Hold to turn off">
+        <span class="ring"></span>
+        <svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg>
+      </button>
+      <div class="who">
+        <b id="tvName">TV</b>
+        <span><i id="dot" class="dot"></i><span id="appName">Connecting…</span></span>
+      </div>
+      <button id="fullBtn" class="icon hidden" aria-label="Full screen" title="Full screen">
+        <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </button>
+      <button data-key="settings" class="icon" aria-label="TV settings" title="TV settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+
+    <div class="pad" role="group" aria-label="Direction pad">
+      <button class="arrow up" data-key="up" data-repeat aria-label="Up"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+      <button class="arrow left" data-key="left" data-repeat aria-label="Left"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <button class="arrow right" data-key="right" data-repeat aria-label="Right"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+      <button class="arrow down" data-key="down" data-repeat aria-label="Down"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="ok" data-key="ok" aria-label="OK">OK</button>
+    </div>
+
+    <div class="row">
+      <div class="rocker" role="group" aria-label="Volume">
+        <button data-key="vol_up" data-repeat aria-label="Volume up"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <div class="label">VOL</div>
+        <button data-key="vol_down" data-repeat aria-label="Volume down"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      </div>
+      <div class="mid">
+        <div class="row" style="gap:14px">
+          <button class="round" data-key="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+          <button class="round" data-key="home" aria-label="Home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+        </div>
+        <div class="vol" id="vol"><i></i></div>
+        <div class="voltext" id="volText"> </div>
+      </div>
+      <div class="rocker" role="group" aria-label="Playback and sound">
+        <button data-key="play_pause" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path d="m6 4 8 8-8 8z"/><path d="M17 5v14M21 5v14"/></svg></button>
+        <div class="label">&nbsp;</div>
+        <button data-key="mute" id="muteBtn" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="chips">
+      <button class="chip" id="appsBtn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Apps</button>
+      <button class="chip" id="kbBtn"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard</button>
+    </div>
+    <div class="hint">Keys: arrows, Enter (OK), Backspace or Esc (Back), H (Home), + and − (volume), M (mute), Space (play/pause), K (keyboard), A (apps)</div>
+  </section>
+</div>
+
+<div id="appsSheet" class="scrim hidden">
+  <div class="sheet" role="dialog" aria-label="Apps">
+    <h2>Apps <button class="icon" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+    <div id="apps" class="apps"></div>
+  </div>
+</div>
+
+<div id="kbSheet" class="scrim hidden">
+  <div class="sheet" role="dialog" aria-label="Keyboard">
+    <h2>Type on the TV <button class="icon" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+    <input id="kbInput" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Pick a text box on the TV, then type">
+    <div id="kbNote" class="note" role="status"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const KEY = "webmote-key";
+  let key = null;
+  try { key = localStorage.getItem(KEY); } catch (e) {}
+
+  const show = (el, on) => el.classList.toggle("hidden", !on);
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; show(t, true);
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => show(t, false), 2600);
+  }
+
+  async function api(path, body) {
+    const opts = { headers: { "X-Webmote-Key": key || "" } };
+    if (body !== undefined) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    const r = await fetch(path, opts);
+    if (r.status === 401) { unpair(); throw new Error("unpaired"); }
+    return r;
+  }
+
+  // ----- Pairing
+  function unpair() {
+    key = null; try { localStorage.removeItem(KEY); } catch (e) {}
+    show($("remote"), false); show($("pair"), true); $("pin").value = ""; $("pairBtn").disabled = true;
+  }
+  $("pin").addEventListener("input", e => {
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    $("pairBtn").disabled = e.target.value.length !== 6;
+    if (e.target.value.length === 6) pair();
+  });
+  $("pairBtn").addEventListener("click", pair);
+  async function pair() {
+    $("pairBtn").disabled = true; $("pairNote").textContent = "Pairing…";
+    try {
+      const r = await fetch("/api/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) });
+      const j = await r.json();
+      if (j.key) {
+        key = j.key; try { localStorage.setItem(KEY, key); } catch (e) {}
+        $("pairNote").textContent = ""; start();
+      } else {
+        $("pairNote").textContent = j.wait ? `Too many tries. Wait ${j.wait} seconds.` : (j.error || "That didn't work.");
+        $("pin").value = ""; $("pin").focus();
+      }
+    } catch (e) {
+      $("pairNote").textContent = "Can't reach the TV. Is it on, and on this Wi-Fi?";
+      $("pairBtn").disabled = false;
+    }
+  }
+
+  // ----- Keys
+  async function press(k) {
+    if (navigator.vibrate) navigator.vibrate(8);
+    try { await api("/api/key", { key: k }); setOnline(true); }
+    catch (e) { if (e.message !== "unpaired") setOnline(false); }
+    if (k.startsWith("vol") || k === "mute") setTimeout(poll, 250);
+  }
+  document.querySelectorAll("[data-key]").forEach(b => {
+    const k = b.dataset.key, repeat = b.hasAttribute("data-repeat");
+    let t1, t2;
+    const stop = () => { clearTimeout(t1); clearInterval(t2); b.classList.remove("on"); };
+    b.addEventListener("pointerdown", e => {
+      e.preventDefault(); b.classList.add("on"); press(k);
+      if (repeat) t1 = setTimeout(() => { t2 = setInterval(() => press(k), 110); }, 420);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, stop));
+    b.addEventListener("contextmenu", e => e.preventDefault());
+    b.addEventListener("click", e => { if (e.detail === 0) press(k); }); // keyboard activation
+  });
+
+  // Hold to turn off, so a stray tap doesn't.
+  (() => {
+    const p = $("power"); let t;
+    const cancel = () => { clearTimeout(t); p.classList.remove("holding"); };
+    p.addEventListener("pointerdown", e => {
+      e.preventDefault(); p.classList.add("holding");
+      t = setTimeout(() => { p.classList.remove("holding"); press("off"); toast("Turning the TV off. Turn it back on with its remote."); }, 900);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(ev => p.addEventListener(ev, cancel));
+    p.addEventListener("click", e => { if (e.detail !== 0) toast("Hold to turn off"); });
+  })();
+
+  // Desktop keyboard.
+  const keymap = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Enter: "ok",
+    Backspace: "back", Escape: "back", h: "home", H: "home", "+": "vol_up", "=": "vol_up", "-": "vol_down",
+    m: "mute", M: "mute", " ": "play_pause" };
+  document.addEventListener("keydown", e => {
+    if (!key || e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!$("appsSheet").classList.contains("hidden") || !$("kbSheet").classList.contains("hidden")) {
+      if (e.key === "Escape") closeSheets();
+      return;
+    }
+    if (e.key === "k" || e.key === "K") { e.preventDefault(); openKeyboard(); return; }
+    if (e.key === "a" || e.key === "A") { e.preventDefault(); openApps(); return; }
+    const k = keymap[e.key];
+    if (k) { e.preventDefault(); press(k); }
+  });
+
+  // ----- Status
+  let online = true;
+  function setOnline(on) {
+    online = on; $("dot").classList.toggle("off", !on);
+    if (!on) $("appName").textContent = "Can't reach the TV";
+  }
+  async function poll() {
+    if (!key || document.hidden) return;
+    try {
+      const s = await (await api("/api/status")).json();
+      setOnline(true);
+      $("tvName").textContent = s.tv || "TV";
+      $("appName").textContent = s.app || "Connected";
+      const pct = s.max ? Math.round(100 * s.volume / s.max) : 0;
+      $("vol").querySelector("i").style.width = (s.muted ? 0 : pct) + "%";
+      $("vol").classList.toggle("muted", s.muted);
+      $("volText").textContent = s.muted ? "Muted" : `Volume ${s.volume}`;
+      $("muteBtn").classList.toggle("on", s.muted);
+    } catch (e) { if (e.message !== "unpaired") setOnline(false); }
+  }
+  setInterval(poll, 4000);
+  document.addEventListener("visibilitychange", poll);
+
+  // ----- Sheets
+  function closeSheets() { show($("appsSheet"), false); show($("kbSheet"), false); $("kbInput").blur(); }
+  document.querySelectorAll(".scrim").forEach(s => s.addEventListener("click", e => {
+    if (e.target === s || e.target.closest("[data-close]")) closeSheets();
+  }));
+
+  let appsLoaded = false;
+  async function openApps() {
+    show($("appsSheet"), true);
+    if (appsLoaded) return;
+    const box = $("apps"); box.textContent = "Loading…";
+    try {
+      const list = await (await api("/api/apps")).json();
+      box.textContent = "";
+      for (const a of list) {
+        const b = document.createElement("button"); b.className = "app-tile";
+        const art = document.createElement("div"); art.className = "art";
+        const name = document.createElement("span"); name.textContent = a.label;
+        b.append(art, name); box.append(b);
+        b.addEventListener("click", async () => {
+          closeSheets(); if (navigator.vibrate) navigator.vibrate(8);
+          await api("/api/launch", { pkg: a.pkg }); setTimeout(poll, 800);
+        });
+        api("/api/icon/" + encodeURIComponent(a.pkg)).then(r => r.ok ? r.blob() : null)
+          .then(bl => { if (bl) art.style.backgroundImage = `url(${URL.createObjectURL(bl)})`; }).catch(() => {});
+      }
+      appsLoaded = true;
+    } catch (e) { box.textContent = "Couldn't load the apps."; }
+  }
+  $("appsBtn").addEventListener("click", openApps);
+
+  let typeTimer;
+  function openKeyboard() {
+    show($("kbSheet"), true); $("kbNote").textContent = ""; $("kbInput").value = "";
+    setTimeout(() => $("kbInput").focus(), 50);
+  }
+  $("kbBtn").addEventListener("click", openKeyboard);
+  $("kbInput").addEventListener("input", e => {
+    clearTimeout(typeTimer);
+    typeTimer = setTimeout(async () => {
+      try {
+        const j = await (await api("/api/text", { text: e.target.value })).json();
+        $("kbNote").textContent = j.ok ? "" : j.error;
+      } catch (err) { $("kbNote").textContent = "Can't reach the TV."; }
+    }, 180);
+  });
+  $("kbInput").addEventListener("keydown", async e => {
+    if (e.key === "Enter") {
+      e.preventDefault(); clearTimeout(typeTimer);
+      await api("/api/text", { text: e.target.value });
+      const j = await (await api("/api/text", { enter: true })).json();
+      if (j.ok) closeSheets(); else $("kbNote").textContent = j.error;
+    } else if (e.key === "Escape") closeSheets();
+  });
+
+  // ----- Full screen (Android browsers; installed apps and iPhone home-screen apps are already full screen)
+  const standalone = matchMedia("(display-mode: standalone), (display-mode: fullscreen)").matches || navigator.standalone;
+  if (!standalone && document.documentElement.requestFullscreen && matchMedia("(hover: none)").matches) show($("fullBtn"), true);
+  $("fullBtn").addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {});
+  });
+
+  function start() { show($("pair"), false); show($("remote"), true); poll(); }
+  if (key) start(); else unpair();
+})();
+</script>
+</body>
+</html>

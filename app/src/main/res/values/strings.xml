@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Webmote</string>
+    <string name="service_name">Webmote</string>
+    <string name="service_description">Lets the Webmote page on your phone or computer press the remote\'s keys: the D-pad, OK, Back, Home and Turn off. It notes which app is in front, to name it on the page, and looks at the screen only when you type from the page, to find the text box that has focus.</string>
+</resources>

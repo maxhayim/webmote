@@ -1,0 +1,60 @@
+plugins {
+    id 'com.android.application'
+}
+
+// SIGNING_PROPERTIES points at a signing.properties kept outside the repo (storeFile, storePassword, keyAlias,
+// keyPassword). Unset, release builds are signed with the debug key.
+def releaseKey = null
+def signingPath = System.getenv('SIGNING_PROPERTIES')
+if (signingPath != null && file(signingPath).exists()) {
+    releaseKey = new Properties()
+    file(signingPath).withInputStream { releaseKey.load(it) }
+}
+
+android {
+    namespace 'io.github.maxhayim.webmote'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'io.github.maxhayim.webmote'
+        minSdk 33
+        targetSdk 34
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    signingConfigs {
+        if (releaseKey != null) {
+            release {
+                storeFile file(releaseKey['storeFile'])
+                storePassword releaseKey['storePassword']
+                keyAlias releaseKey['keyAlias']
+                keyPassword releaseKey['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // The release key lives outside the repo (see release.sh); without it, the debug key, as in CI.
+            signingConfig releaseKey != null ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    // No libraries in the APK. Test only: plain JVM tests in src/test.
+    testImplementation 'junit:junit:4.13.2'
+}
