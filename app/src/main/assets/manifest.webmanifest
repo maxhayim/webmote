@@ -1,6 +1,6 @@
 {
-  "name": "Webmote",
-  "short_name": "Webmote",
+  "name": "%TV% - Webmote",
+  "short_name": "%TV% - Webmote",
   "description": "A remote for your TV, in the browser.",
   "start_url": "/",
   "scope": "/",

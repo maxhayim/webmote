@@ -151,6 +151,12 @@ public class RemoteService extends AccessibilityService {
         }
     }
 
+    /** The name the TV goes by in its settings, for the page title and the API. */
+    String tvName() {
+        String name = Settings.Global.getString(getContentResolver(), Settings.Global.DEVICE_NAME);
+        return name == null || name.trim().isEmpty() ? "TV" : name.trim();
+    }
+
     String status() {
         AudioManager audio = getSystemService(AudioManager.class);
         String app = "";
@@ -166,8 +172,7 @@ public class RemoteService extends AccessibilityService {
                 // Uninstalled since.
             }
         }
-        String name = Settings.Global.getString(getContentResolver(), Settings.Global.DEVICE_NAME);
-        return "{\"tv\":" + Json.quote(name == null ? "TV" : name)
+        return "{\"tv\":" + Json.quote(tvName())
                 + ",\"app\":" + Json.quote(app)
                 + ",\"volume\":" + audio.getStreamVolume(AudioManager.STREAM_MUSIC)
                 + ",\"max\":" + audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)

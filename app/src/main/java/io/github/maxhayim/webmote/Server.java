@@ -105,9 +105,10 @@ final class Server {
         String p = r.path;
         boolean get = r.method.equals("GET"), post = r.method.equals("POST");
         if (get && (p.equals("/") || p.equals("/index.html"))) {
-            Http.write(out, 200, "text/html; charset=utf-8", asset("index.html"), false);
+            Http.write(out, 200, "text/html; charset=utf-8", named(asset("index.html"), html(service.tvName())), false);
         } else if (get && p.equals("/manifest.webmanifest")) {
-            Http.write(out, 200, "application/manifest+json", asset("manifest.webmanifest"), false);
+            String tv = Json.quote(service.tvName());
+            Http.write(out, 200, "application/manifest+json", named(asset("manifest.webmanifest"), tv.substring(1, tv.length() - 1)), false);
         } else if (get && p.equals("/icon-192.png")) {
             Http.write(out, 200, "image/png", Icon.png(192), true);
         } else if (get && p.equals("/icon-512.png")) {
@@ -164,6 +165,15 @@ final class Server {
 
     private static void json(OutputStream out, int status, String body) throws IOException {
         Http.write(out, status, "application/json; charset=utf-8", bytes(body), false);
+    }
+
+    /** The asset with each {@code %TV%} swapped for the TV's name, already escaped for where it goes. */
+    static byte[] named(byte[] asset, String tv) {
+        return bytes(new String(asset, StandardCharsets.UTF_8).replace("%TV%", tv));
+    }
+
+    static String html(String s) {
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     private byte[] asset(String name) throws IOException {

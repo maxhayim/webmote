@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Webmote</title>
+<title>%TV% - Webmote</title>
 <meta name="theme-color" content="#0e1016">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Webmote">
+<meta name="apple-mobile-web-app-title" content="%TV% - Webmote">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -299,6 +299,7 @@ input:focus { border-color: var(--accent); }
       const s = await (await api("/api/status")).json();
       setOnline(true);
       $("tvName").textContent = s.tv || "TV";
+      document.title = `${s.tv || "TV"} - Webmote`; // follows a rename without a reload
       $("appName").textContent = s.app || "Connected";
       const pct = s.max ? Math.round(100 * s.volume / s.max) : 0;
       $("vol").querySelector("i").style.width = (s.muted ? 0 : pct) + "%";

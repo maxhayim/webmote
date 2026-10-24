@@ -149,4 +149,11 @@ public class WebmoteTest {
         assertFalse(auth.allowed(first));
         assertEquals(Auth.MAX_PHONES, auth.phones());
     }
+
+    @Test
+    public void namesThePageAfterTheTv() {
+        byte[] page = "<title>%TV% - Webmote</title>".getBytes(StandardCharsets.UTF_8);
+        assertEquals("<title>Max's &lt;TV&gt; &amp; &quot;more&quot; - Webmote</title>",
+                new String(Server.named(page, Server.html("Max's <TV> & \"more\"")), StandardCharsets.UTF_8));
+    }
 }
