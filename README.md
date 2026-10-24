@@ -33,6 +33,12 @@
 
 <p align="center"><sub>Left: the remote page (demo TV and apps). Right: Webmote on the TV, with the address and PIN blurred.</sub></p>
 
+<p align="center">
+  <img src="docs/remote-desktop.png" alt="The Webmote remote page in a wide desktop browser window, D-pad on the left and buttons on the right" width="820"/>
+</p>
+
+<p align="center"><sub>On a computer or a tablet on its side, the remote spreads out to fit the window (demo TV).</sub></p>
+
 <h2>Features</h2>
 
 <ul>
