@@ -140,8 +140,9 @@ final class Server {
             ok(out, key != null && service.press(key));
         } else if (post && p.equals("/api/text")) {
             String text = Json.string(r.body, "text");
-            boolean done = Json.isTrue(r.body, "enter") ? service.enter() : text != null && service.type(text);
+            boolean done = Json.isTrue(r.body, "enter") ? service.enter(text) : text != null && service.type(text);
             if (done) ok(out, true);
+            else if (service.searchesOnEnter()) json(out, 200, "{\"ok\":false,\"error\":\"This app has its own keyboard. Press Enter to search it.\"}");
             else json(out, 200, "{\"ok\":false,\"error\":\"No text box has focus on the TV.\"}");
         } else if (get && p.equals("/api/apps")) {
             json(out, 200, Apps.json(service));

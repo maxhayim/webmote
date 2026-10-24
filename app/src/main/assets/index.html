@@ -380,8 +380,7 @@ input:focus { border-color: var(--accent); }
   $("kbInput").addEventListener("keydown", async e => {
     if (e.key === "Enter") {
       e.preventDefault(); clearTimeout(typeTimer);
-      await api("/api/text", { text: e.target.value });
-      const j = await (await api("/api/text", { enter: true })).json();
+      const j = await (await api("/api/text", { text: e.target.value, enter: true })).json();
       if (j.ok) closeSheets(); else $("kbNote").textContent = j.error;
     } else if (e.key === "Escape") closeSheets();
   });

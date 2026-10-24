@@ -1,7 +1,6 @@
 package io.github.maxhayim.webmote;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.InputMethod;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -9,33 +8,35 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
-import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.security.SecureRandom;
+import java.util.Map;
 
 /**
  * The remote's hands, and its server's home: while this accessibility service is on, the page is served on the home
  * network. D-pad, OK, Back, Home and Turn off are the system's own global actions (Android 13 added the D-pad ones);
  * volume goes through the audio service. It listens only for which app comes to the front (to name it on the page),
  * and reads the screen only when the page types: to find the text field that has focus. Apps that draw their own
- * on-screen keyboard (Netflix) have no text field, so there it types as a keyboard would, through the input method
- * Android 13 gives accessibility services.
+ * keyboard (Netflix) have no text field to fill, but take a search in a link, so Enter searches there.
  */
 public class RemoteService extends AccessibilityService {
     static final int PORT = 8080;
+
+    /** Apps with their own keyboard and a search link, by package: the link, before the search words. */
+    private static final Map<String, String> SEARCH_LINKS = Map.of("com.netflix.ninja", "nflx://www.netflix.com/search?q=");
 
     static volatile RemoteService running;
     private static Auth auth;
 
     private Server server;
     private volatile String frontPackage;
-    private String keyed = ""; // what key presses have typed into the app in front, to work out what to change
 
     static synchronized Auth auth(Context c) {
         if (auth == null) {
@@ -68,10 +69,7 @@ public class RemoteService extends AccessibilityService {
         if (e.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || e.getPackageName() == null) return;
         String pkg = e.getPackageName().toString();
         // Dialogs and the volume bar come and go over the app; keep the app.
-        if (!pkg.equals("android") && !pkg.equals("com.android.systemui") && !pkg.equals(getPackageName())) {
-            if (!pkg.equals(frontPackage)) forgetKeyed();
-            frontPackage = pkg;
-        }
+        if (!pkg.equals("android") && !pkg.equals("com.android.systemui") && !pkg.equals(getPackageName())) frontPackage = pkg;
     }
 
     @Override
@@ -123,59 +121,35 @@ public class RemoteService extends AccessibilityService {
         }
     }
 
-    /**
-     * Puts {@code text} in the focused text field (all of it, replacing what was there), or, in an app with no text
-     * field but taking keys, presses the keys that turn what was typed before into it; false when neither is there.
-     */
+    /** Puts {@code text} in the focused text field (all of it, replacing what was there); false when none has focus. */
     boolean type(String text) {
         AccessibilityNodeInfo field = focusedField();
-        if (field == null) return keyIn(text);
-        forgetKeyed();
+        if (field == null) return false;
         Bundle args = new Bundle();
         args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
         return field.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
     }
 
-    /** The keyboard's Enter (search, go) in the focused text field, or an Enter key press. */
-    boolean enter() {
+    /**
+     * The keyboard's Enter (search, go) in the focused text field, after putting {@code text} in it when given. With no
+     * text field, in an app that searches by link, searches there for {@code text}.
+     */
+    boolean enter(String text) {
         AccessibilityNodeInfo field = focusedField();
-        if (field != null) return field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
-        InputMethod.AccessibilityInputConnection ic = keys();
-        if (ic == null) return false;
-        tap(ic, KeyEvent.KEYCODE_ENTER);
-        forgetKeyed();
-        return true;
+        if (field == null) return text != null && search(text);
+        if (text != null && !type(text)) return false;
+        return field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
     }
 
-    private synchronized boolean keyIn(String text) {
-        InputMethod.AccessibilityInputConnection ic = keys();
-        if (ic == null) return false;
-        int same = 0;
-        while (same < keyed.length() && same < text.length() && keyed.charAt(same) == text.charAt(same)) same++;
-        for (int i = keyed.length(); i > same; i--) tap(ic, KeyEvent.KEYCODE_DEL);
-        KeyCharacterMap map = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-        for (int i = same; i < text.length(); i++) {
-            KeyEvent[] events = map.getEvents(new char[] {text.charAt(i)});
-            if (events == null) ic.commitText(text.substring(i, i + 1), 1, null); // no key for it (é, emoji)
-            else for (KeyEvent e : events) ic.sendKeyEvent(e);
-        }
-        keyed = text;
-        return true;
+    /** Whether the app in front has no text field to type into but searches on Enter. */
+    boolean searchesOnEnter() {
+        return focusedField() == null && SEARCH_LINKS.containsKey(String.valueOf(front()));
     }
 
-    private synchronized void forgetKeyed() {
-        keyed = "";
-    }
-
-    /** The connection to whatever takes keys in the app in front, or null when nothing does. */
-    private InputMethod.AccessibilityInputConnection keys() {
-        InputMethod im = getInputMethod();
-        return im == null || !im.getCurrentInputStarted() ? null : im.getCurrentInputConnection();
-    }
-
-    private static void tap(InputMethod.AccessibilityInputConnection ic, int code) {
-        ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, code));
-        ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, code));
+    private boolean search(String text) {
+        String pkg = front(), link = pkg == null ? null : SEARCH_LINKS.get(pkg);
+        if (link == null || text.trim().isEmpty()) return false;
+        return start(new Intent(Intent.ACTION_VIEW, Uri.parse(link + Uri.encode(text.trim()))).setPackage(pkg));
     }
 
     private AccessibilityNodeInfo focusedField() {
@@ -205,13 +179,17 @@ public class RemoteService extends AccessibilityService {
         return name == null || name.trim().isEmpty() ? "TV" : name.trim();
     }
 
+    /** The app in front: the window's, when the TV says; window events alone miss some returns to the home screen. */
+    private String front() {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        String pkg = root != null && root.getPackageName() != null ? root.getPackageName().toString() : frontPackage;
+        return pkg != null && (pkg.equals("com.android.systemui") || pkg.equals(getPackageName())) ? frontPackage : pkg;
+    }
+
     String status() {
         AudioManager audio = getSystemService(AudioManager.class);
         String app = "";
-        // The window in front, when the TV says; window events alone miss some returns to the home screen.
-        AccessibilityNodeInfo root = getRootInActiveWindow();
-        String pkg = root != null && root.getPackageName() != null ? root.getPackageName().toString() : frontPackage;
-        if (pkg != null && (pkg.equals("com.android.systemui") || pkg.equals(getPackageName()))) pkg = frontPackage;
+        String pkg = front();
         if (pkg != null) {
             try {
                 ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);

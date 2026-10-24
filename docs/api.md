@@ -30,7 +30,7 @@ curl -H "X-Webmote-Key: $KEY" -X POST -d '{"key":"home"}' $TV/api/key
 |---|---|---|
 | `POST /api/key` | `{"key": "<name>"}` | `{"ok": true}`, or `false` for an unknown name or a key the TV refused |
 | `POST /api/text` | `{"text": "..."}` replaces the text in the TV's focused text box | `{"ok": true}`, or `{"ok": false, "error": "No text box has focus on the TV."}` |
-| `POST /api/text` | `{"enter": true}` presses the keyboard's Enter (search, go) | as above |
+| `POST /api/text` | `{"enter": true}` presses the keyboard's Enter (search, go); with `"text"`, sets the text first. In an app with its own keyboard and no text box (Netflix), searches the app for `"text"` | as above |
 | `GET /api/status` | | `{"tv": "Living Room TV", "app": "YouTube", "volume": 18, "max": 100, "muted": false}` |
 | `GET /api/apps` | | `[{"label": "YouTube", "pkg": "com.google.android.youtube.tv"}, …]`, by name |
 | `GET /api/icon/<pkg>.png` | | The app's banner as a PNG (at most 320 × 180), or 404 |

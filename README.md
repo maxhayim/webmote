@@ -126,7 +126,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <ul>
   <li><strong>D-pad, OK, Back, Home and Turn off</strong> are Android's own global actions for accessibility services, the same ones a switch-access device uses. No ADB, no root, and no input injection.</li>
   <li><strong>Volume and mute</strong> go through the audio service, and the TV shows its own volume bar. <strong>Play/pause</strong> is a media key, delivered to whichever app is playing.</li>
-  <li><strong>Typing</strong> finds the text box that has focus on the TV and sets its text, like the Google TV app's keyboard does.</li>
+  <li><strong>Typing</strong> finds the text box that has focus on the TV and sets its text, like the Google TV app's keyboard does. Netflix draws its own keyboard with no text box behind it, so there Enter opens Netflix's search for what you typed, through the link Netflix offers for searching.</li>
   <li><strong>Apps</strong> are the ones with a TV launcher entry, opened the way the home screen opens them.</li>
 </ul>
 
@@ -149,7 +149,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
   <li><strong>It can't turn the TV on.</strong> A TV in standby is off the network, so nothing on Wi-Fi can reach Webmote. Use the TV's remote, HDMI-CEC from another device, or a voice assistant to turn it on.</li>
   <li><strong>Android 13 or newer only.</strong> The D-pad actions for accessibility services arrived in Android 13.</li>
   <li><strong>Android Chrome won't install it as a full app over HTTP.</strong> Browsers only install web apps from HTTPS, which a TV on a private address can't get. iPhone home-screen web apps open full screen anyway; on Android use the full-screen button.</li>
-  <li><strong>Some apps ignore the keyboard.</strong> Apps that draw their own on-screen keyboard instead of a real text box can't receive typed text; use the D-pad there.</li>
+  <li><strong>Some apps ignore the keyboard.</strong> Apps that draw their own on-screen keyboard instead of a real text box can't receive typed text; use the D-pad there. Netflix is the exception: type, then press Enter to search it.</li>
   <li><strong>The remote service has to stay on.</strong> Some TVs turn accessibility services off after an update or when memory is short; open Webmote on the TV to see whether it's on.</li>
 </ul>
 
