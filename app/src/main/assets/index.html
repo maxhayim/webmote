@@ -16,7 +16,7 @@
 :root {
   --bg: #0e1016; --surface: #1a1e28; --surface-2: #232836; --press: #2e3446;
   --line: #2a3040; --text: #e9ecf3; --muted: #8b93a7; --accent: #8fa8ff; --accent-ink: #0e1016;
-  --danger: #ff7b7b; --radius: 22px;
+  --danger: #ff7b7b; --radius: 22px; --b: 64px; /* round button size */
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
@@ -43,7 +43,7 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .power.holding .ring { clip-path: inset(0 0 0 0); transition: clip-path .9s linear; }
 
 /* D-pad */
-.pad { position: relative; width: min(78vw, 300px); aspect-ratio: 1; margin: 8px auto 0; border-radius: 50%;
+.pad { position: relative; width: min(78vw, 44vh, 300px); aspect-ratio: 1; margin: 8px auto 0; border-radius: 50%;
   background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .pad .arrow { position: absolute; display: grid; place-items: center; color: var(--muted); }
 .pad .arrow:active, .pad .arrow.on { color: var(--text); }
@@ -61,11 +61,11 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 
 /* Button rows */
 .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
-.round { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
+.round { width: var(--b); height: var(--b); border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
 .round:active, .round.on { background: var(--press); }
-.round svg { width: 26px; height: 26px; }
-.rocker { display: flex; flex-direction: column; width: 64px; border-radius: 32px; background: var(--surface); overflow: hidden; }
-.rocker button { height: 64px; display: grid; place-items: center; }
+.round svg { width: calc(var(--b) * .4); height: calc(var(--b) * .4); }
+.rocker { display: flex; flex-direction: column; width: var(--b); border-radius: calc(var(--b) / 2); background: var(--surface); overflow: hidden; }
+.rocker button { height: var(--b); display: grid; place-items: center; }
 .rocker button:active, .rocker button.on { background: var(--press); }
 .rocker .label { font-size: 11px; color: var(--muted); text-align: center; letter-spacing: .08em; }
 .mid { display: flex; flex-direction: column; gap: 14px; align-items: center; }
@@ -78,6 +78,24 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
 .chip:active, .chip.on { background: var(--press); }
 .hint { color: var(--muted); font-size: 12px; text-align: center; }
 @media (hover: none) { .hint { display: none; } }
+.side { display: contents; }
+
+/* Wide windows (a computer, a tablet on its side): the D-pad on the left, the rest on the right, sized to the window */
+@media (min-width: 760px) and (min-aspect-ratio: 1/1) {
+  :root { --b: clamp(64px, 10vh, 96px); }
+  .app:has(#remote:not(.hidden)) { max-width: 1240px; display: grid; grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto; column-gap: 6vw; padding: 24px 48px; }
+  .top, .hint { grid-column: 1 / -1; }
+  .who b { font-size: 21px; }
+  .who span { font-size: 15px; }
+  .pad { width: min(68vh, 42vw, 620px); margin: auto; }
+  .pad .arrow svg { width: 40px; height: 40px; }
+  .pad .ok { font-size: 20px; }
+  .side { display: flex; flex-direction: column; justify-content: center; gap: 8vh; }
+  .chips { margin-top: 0; }
+  .chip { height: clamp(54px, 8vh, 72px); font-size: 17px; }
+  .vol { width: 160px; }
+}
 
 /* Sheets */
 .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-end; justify-content: center; z-index: 5; }
@@ -142,6 +160,7 @@ input:focus { border-color: var(--accent); }
       <button class="ok" data-key="ok" aria-label="OK">OK</button>
     </div>
 
+    <div class="side">
     <div class="row">
       <div class="rocker" role="group" aria-label="Volume">
         <button data-key="vol_up" data-repeat aria-label="Volume up"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -166,6 +185,7 @@ input:focus { border-color: var(--accent); }
     <div class="chips">
       <button class="chip" id="appsBtn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Apps</button>
       <button class="chip" id="kbBtn"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard</button>
+    </div>
     </div>
     <div class="hint">Keys: arrows, Enter (OK), Backspace or Esc (Back), H (Home), + and − (volume), M (mute), Space (play/pause), K (keyboard), A (apps)</div>
   </section>
