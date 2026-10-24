@@ -92,7 +92,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <ol>
   <li>Open <strong>Webmote</strong> on the TV. It shows an address like <code>http://192.168.1.20:8080</code> and a 6-digit PIN.</li>
-  <li>Open that address in the browser on your phone or computer, and type the PIN. The browser stays paired.</li>
+  <li>Open that address in the browser on your phone or computer, and type the PIN. The TV also shows the PIN in a corner while the browser is on the pairing page, so after the first time you can skip opening Webmote on the TV. The browser stays paired.</li>
   <li>Add it to your home screen:
     <ul>
       <li><strong>iPhone and iPad (Safari)</strong>: Share → <strong>Add to Home Screen</strong>. It opens full screen, like an app.</li>
@@ -136,7 +136,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <ul>
   <li>Only devices on your home network (private addresses, and VPN ranges like Tailscale's) can connect at all.</li>
-  <li>Every control call needs a key that the TV gives out only for the PIN on its screen. After 5 wrong PINs, pairing locks for 30 seconds, doubling up to 5 minutes.</li>
+  <li>Every control call needs a key that the TV gives out only for the PIN on its screen. After 5 wrong PINs, pairing locks for 30 seconds, doubling up to 5 minutes. A browser on the pairing page can ask the TV to show the PIN in a corner of its screen for a minute; that shows it to the room, not to the browser.</li>
   <li>The TV stores only hashes of the keys. Pages on other websites can't use your paired browser to control the TV (no CORS, DNS-rebinding protection).</li>
   <li>No accounts, no cloud, no analytics: nothing leaves your network.</li>
 </ul>

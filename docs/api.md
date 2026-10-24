@@ -16,6 +16,13 @@ curl -X POST -d '{"pin":"123456"}' http://192.168.1.20:8080/api/pair
 # {"error":"Too many tries.","wait":30}    429: wait that many seconds
 ```
 
+A page that isn't paired can ask the TV to show its PIN in a corner of the screen for a minute (until a device pairs):
+
+```bash
+curl -X POST -H 'Content-Type: application/json' -d '{}' http://192.168.1.20:8080/api/pair/show
+# {"ok":true}
+```
+
 The key works until someone presses **New PIN** on the TV, or 20 newer devices pair. Treat it like a password.
 A call with a missing or old key gets `401 {"error":"Pair this device again."}`.
 

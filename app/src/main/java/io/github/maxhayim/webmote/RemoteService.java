@@ -36,6 +36,7 @@ public class RemoteService extends AccessibilityService {
     private static Auth auth;
 
     private Server server;
+    private PinCard pinCard;
     private volatile String frontPackage;
 
     static synchronized Auth auth(Context c) {
@@ -60,6 +61,7 @@ public class RemoteService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         running = this;
+        pinCard = new PinCard(this);
         server = new Server(this, auth(this));
         server.start(PORT);
     }
@@ -79,8 +81,19 @@ public class RemoteService extends AccessibilityService {
     @Override
     public void onDestroy() {
         if (server != null) server.stop();
+        if (pinCard != null) pinCard.hide();
         if (running == this) running = null;
         super.onDestroy();
+    }
+
+    /** The PIN in a corner of the TV, for a device on the pairing page. */
+    void showPin() {
+        String pin = auth(this).pin();
+        if (pin != null) pinCard.show(pin);
+    }
+
+    void hidePin() {
+        pinCard.hide();
     }
 
     int port() {

@@ -117,9 +117,17 @@ final class Server {
             Http.write(out, 200, "image/png", Icon.png(180), true);
         } else if (post && p.equals("/api/pair")) {
             Auth.Result res = auth.pair(Json.string(r.body, "pin"), SystemClock.elapsedRealtime());
-            if (res.key != null) json(out, 200, "{\"key\":" + Json.quote(res.key) + "}");
+            if (res.key != null) {
+                service.hidePin();
+                json(out, 200, "{\"key\":" + Json.quote(res.key) + "}");
+            }
             else if (res.waitMs > 0) json(out, 429, "{\"error\":\"Too many tries.\",\"wait\":" + ((res.waitMs + 999) / 1000) + "}");
             else json(out, 403, "{\"error\":\"That PIN isn't right.\"}");
+        } else if (post && p.equals("/api/pair/show")) {
+            // JSON only, so another site's page can't post it without the browser asking first (and it gets no yes).
+            boolean json = String.valueOf(r.header("content-type")).startsWith("application/json");
+            if (json) service.showPin();
+            ok(out, json);
         } else if (p.startsWith("/api/")) {
             if (!auth.allowed(r.header("x-webmote-key"))) {
                 json(out, 401, "{\"error\":\"Pair this device again.\"}");
