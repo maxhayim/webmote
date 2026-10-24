@@ -1,6 +1,3 @@
-> [!WARNING]
-> **Webmote is under active development** and not yet stable; features may still change. Give the repo a **Star** and **Watch** it to get notified when a new release lands.
-
 <p align="center">
   <img src="assets/logo.png" alt="Webmote Logo" width="200"/>
 </p>
@@ -25,6 +22,8 @@
 <p>Webmote is an open-source remote for Android TV and Google TV that works in a web browser. Install it on the TV, open the address it shows on any phone, tablet or computer on the same Wi-Fi, type the PIN from the TV screen, and you have a remote like Google TV's: D-pad, OK, Back, Home, volume, play/pause, an Apps sheet and a keyboard for typing searches.</p>
 
 <p>There is nothing to install on the phone and no account to sign in to, and nothing leaves your home network. Add the page to your phone's home screen and it opens full screen, like an app.</p>
+
+<h2>Screenshots</h2>
 
 <p align="center">
   <img src="docs/remote.png" alt="The Webmote remote page on a phone" width="300"/>
