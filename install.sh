@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Webmote on the TV, switch on its remote service and open it (it shows the address and PIN).
 #   TV_HOST=<tv ip> ./install.sh                     # builds from this source
-#   TV_HOST=<tv ip> APK=Webmote-0.1.0.apk ./install.sh   # or installs a release APK
+#   TV_HOST=<tv ip> APK=Webmote-0.1.1.apk ./install.sh   # or installs a release APK
 # Uses adb. Where macOS blocks the stock adb, set CLEANYOURTV to a clone of github.com/Gathin23/cleanyourtv with
 # its tools set up (tools/venv), and its tools/tv.py is used instead.
 set -euo pipefail

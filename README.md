@@ -65,7 +65,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.1.0.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.1.1.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
