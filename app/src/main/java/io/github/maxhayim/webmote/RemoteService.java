@@ -9,10 +9,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -21,7 +23,8 @@ import java.util.Map;
 
 /**
  * The remote's hands, and its server's home: while this accessibility service is on, the page is served on the home
- * network. D-pad, OK, Back, Home and Turn off are the system's own global actions (Android 13 added the D-pad ones);
+ * network. D-pad, OK, Back, Home and Turn off are the system's own global actions (Android 13 added the D-pad ones;
+ * before it, the D-pad moves the focus itself and OK clicks what has it);
  * volume goes through the audio service. It listens only for which app comes to the front (to name it on the page),
  * and reads the screen only when the page types: to find the text field that has focus. Apps that draw their own
  * keyboard (Netflix) have no text field to fill, but take a search in a link, so Enter searches there.
@@ -104,11 +107,11 @@ public class RemoteService extends AccessibilityService {
     boolean press(String key) {
         AudioManager audio = getSystemService(AudioManager.class);
         switch (key) {
-            case "up": return performGlobalAction(GLOBAL_ACTION_DPAD_UP);
-            case "down": return performGlobalAction(GLOBAL_ACTION_DPAD_DOWN);
-            case "left": return performGlobalAction(GLOBAL_ACTION_DPAD_LEFT);
-            case "right": return performGlobalAction(GLOBAL_ACTION_DPAD_RIGHT);
-            case "ok": return performGlobalAction(GLOBAL_ACTION_DPAD_CENTER);
+            case "up": return dpad(GLOBAL_ACTION_DPAD_UP, View.FOCUS_UP);
+            case "down": return dpad(GLOBAL_ACTION_DPAD_DOWN, View.FOCUS_DOWN);
+            case "left": return dpad(GLOBAL_ACTION_DPAD_LEFT, View.FOCUS_LEFT);
+            case "right": return dpad(GLOBAL_ACTION_DPAD_RIGHT, View.FOCUS_RIGHT);
+            case "ok": return dpad(GLOBAL_ACTION_DPAD_CENTER, 0);
             case "back": return performGlobalAction(GLOBAL_ACTION_BACK);
             case "home": return performGlobalAction(GLOBAL_ACTION_HOME);
             case "recents": return performGlobalAction(GLOBAL_ACTION_RECENTS);
@@ -132,6 +135,47 @@ public class RemoteService extends AccessibilityService {
             default:
                 return false;
         }
+    }
+
+    /**
+     * One D-pad key ({@code direction} 0: OK). Android 12 and older have no D-pad actions for accessibility services, so
+     * there it moves the focus to the next view that way, scrolling the list when there's none on screen, and OK clicks
+     * the focused view (or the nearest clickable one around it). Apps that draw their own screen don't follow that.
+     */
+    private boolean dpad(int action, int direction) {
+        if (Build.VERSION.SDK_INT >= 33) return performGlobalAction(action);
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return false;
+        AccessibilityNodeInfo f = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+        if (f == null) {
+            AccessibilityNodeInfo first = firstFocusable(root, 0);
+            return first != null && first.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+        }
+        if (direction == 0) {
+            for (AccessibilityNodeInfo n = f; n != null; n = n.getParent()) {
+                if (n.isClickable()) return n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+            return false;
+        }
+        AccessibilityNodeInfo next = f.focusSearch(direction);
+        if (next != null && !next.equals(f)) return next.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+        boolean forward = direction == View.FOCUS_DOWN || direction == View.FOCUS_RIGHT;
+        for (AccessibilityNodeInfo n = f.getParent(); n != null; n = n.getParent()) {
+            if (n.isScrollable()) {
+                return n.performAction(forward ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD : AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+            }
+        }
+        return false;
+    }
+
+    private static AccessibilityNodeInfo firstFocusable(AccessibilityNodeInfo n, int depth) {
+        if (n == null || depth > 30) return null;
+        if (n.isFocusable() && n.isVisibleToUser()) return n;
+        for (int i = 0; i < n.getChildCount(); i++) {
+            AccessibilityNodeInfo found = firstFocusable(n.getChild(i), depth + 1);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     /** Puts {@code text} in the focused text field (all of it, replacing what was there); false when none has focus. */
