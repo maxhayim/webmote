@@ -19,6 +19,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -33,7 +37,8 @@ public class RemoteService extends AccessibilityService {
     static final int PORT = 8080;
 
     /** Apps with their own keyboard and a search link, by package: the link, before the search words. */
-    private static final Map<String, String> SEARCH_LINKS = Map.of("com.netflix.ninja", "nflx://www.netflix.com/search?q=");
+    private static final Map<String, String> SEARCH_LINKS =
+            Collections.singletonMap("com.netflix.ninja", "nflx://www.netflix.com/search?q=");
 
     static volatile RemoteService running;
     private static Auth auth;
@@ -116,15 +121,9 @@ public class RemoteService extends AccessibilityService {
             case "home": return performGlobalAction(GLOBAL_ACTION_HOME);
             case "recents": return performGlobalAction(GLOBAL_ACTION_RECENTS);
             case "off": return performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
-            case "vol_up":
-                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
-                return true;
-            case "vol_down":
-                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
-                return true;
-            case "mute":
-                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE, AudioManager.FLAG_SHOW_UI);
-                return true;
+            case "vol_up": return volume(audio, AudioManager.ADJUST_RAISE);
+            case "vol_down": return volume(audio, AudioManager.ADJUST_LOWER);
+            case "mute": return volume(audio, AudioManager.ADJUST_TOGGLE_MUTE);
             case "play_pause":
                 long t = SystemClock.uptimeMillis();
                 audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0));
@@ -135,6 +134,55 @@ public class RemoteService extends AccessibilityService {
             default:
                 return false;
         }
+    }
+
+    /**
+     * Volume up, down or mute. Some Android 9 and 10 TV ROMs route volume through a vendor service, where
+     * {@code adjustStreamVolume} throws or goes through without moving the level; there, each other way of asking is
+     * tried in turn until the level moves. Newer TVs only get the first, so a TV that hands volume to a sound bar
+     * (where the level here never moves) doesn't get every press twice.
+     */
+    private boolean volume(AudioManager audio, int direction) {
+        int before = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        try {
+            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI);
+            if (Build.VERSION.SDK_INT >= 30 || moved(audio, before, direction)) return true;
+        } catch (RuntimeException e) {
+            if (Build.VERSION.SDK_INT >= 30) return false;
+        }
+        if (direction == AudioManager.ADJUST_TOGGLE_MUTE) {
+            try {
+                audio.setStreamMute(AudioManager.STREAM_MUSIC, !audio.isStreamMute(AudioManager.STREAM_MUSIC));
+                return true;
+            } catch (RuntimeException e) {
+                return false;
+            }
+        }
+        try {
+            // What the ROM's own volume panel calls; it picks the stream itself.
+            audio.adjustSuggestedStreamVolume(direction, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI);
+            if (moved(audio, before, direction)) return true;
+        } catch (RuntimeException e) {
+            // Not that one either.
+        }
+        int code = direction == AudioManager.ADJUST_RAISE ? KeyEvent.KEYCODE_VOLUME_UP : KeyEvent.KEYCODE_VOLUME_DOWN;
+        long t = SystemClock.uptimeMillis();
+        audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_DOWN, code, 0));
+        audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_UP, code, 0));
+        if (moved(audio, before, direction)) return true;
+        int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int wanted = Math.max(0, Math.min(max, before + (direction == AudioManager.ADJUST_RAISE ? 1 : -1)));
+        try {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, wanted, AudioManager.FLAG_SHOW_UI);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    private static boolean moved(AudioManager audio, int before, int direction) {
+        int now = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        return direction == AudioManager.ADJUST_RAISE ? now > before : now < before;
     }
 
     /**
@@ -195,7 +243,37 @@ public class RemoteService extends AccessibilityService {
         AccessibilityNodeInfo field = focusedField();
         if (field == null) return text != null && search(text);
         if (text != null && !type(text)) return false;
-        return field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
+        if (Build.VERSION.SDK_INT >= 30) {
+            return field.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
+        }
+        return clickSearchButton();
+    }
+
+    /**
+     * Android 9 and 10 have no Enter action for accessibility services, so this clicks the app's own search, send or
+     * go button instead, found by its label or description among the clickable views on screen; false when there's none.
+     */
+    private boolean clickSearchButton() {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return false;
+        List<AccessibilityNodeInfo> buttons = new ArrayList<>();
+        collectClickable(root, buttons, 0);
+        for (AccessibilityNodeInfo b : buttons) {
+            for (CharSequence label : new CharSequence[] {b.getText(), b.getContentDescription()}) {
+                if (label == null) continue;
+                String l = label.toString().trim().toLowerCase(Locale.ROOT);
+                for (String name : new String[] {"search", "send", "go", "enter"}) {
+                    if ((l.equals(name) || l.endsWith(" " + name)) && b.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void collectClickable(AccessibilityNodeInfo n, List<AccessibilityNodeInfo> out, int depth) {
+        if (n == null || depth > 20 || out.size() > 200) return;
+        if (n.isClickable() && n.isVisibleToUser()) out.add(n);
+        for (int i = 0; i < n.getChildCount(); i++) collectClickable(n.getChild(i), out, depth + 1);
     }
 
     /** Whether the app in front has no text field to type into but searches on Enter. */

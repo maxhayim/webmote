@@ -58,7 +58,7 @@
 <h2>Requirements</h2>
 
 <ul>
-  <li>An Android TV or Google TV device on <strong>Android 11 or newer</strong> (on Android 13 and newer the D-pad works everywhere; see Known Limitations for 11 and 12)</li>
+  <li>An Android TV or Google TV device on <strong>Android 9 or newer</strong> (on Android 13 and newer the D-pad works everywhere; see Known Limitations for 9 to 12)</li>
   <li>A phone, tablet or computer with a modern browser, <strong>on the same network</strong> as the TV</li>
   <li>To install: a computer with <a href="https://developer.android.com/tools/releases/platform-tools">ADB</a> and Developer options → Network debugging on the TV, or any sideloading app on the TV</li>
 </ul>
@@ -71,7 +71,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.1.1.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.2.0.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
@@ -147,7 +147,9 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <ul>
   <li><strong>It can't turn the TV on.</strong> A TV in standby is off the network, so nothing on Wi-Fi can reach Webmote. Use the TV's remote, HDMI-CEC from another device, or a voice assistant to turn it on.</li>
-  <li><strong>The D-pad on Android 11 and 12 works in most apps, not all.</strong> The D-pad actions for accessibility services arrived in Android 13. Before that, Webmote moves the TV's focus itself and OK clicks what has it. That follows apps built from standard Android views (home screens, settings, most app menus), but not apps that draw their own screen, such as some games and video players. Not yet tested on an Android 11 or 12 TV: reports welcome. Android 10 and older aren't supported.</li>
+  <li><strong>The D-pad on Android 9 to 12 works in most apps, not all.</strong> The D-pad actions for accessibility services arrived in Android 13. Before that, Webmote moves the TV's focus itself and OK clicks what has it. That follows apps built from standard Android views (home screens, settings, most app menus), but not apps that draw their own screen, such as some games and video players.</li>
+  <li><strong>Enter on Android 9 and 10 clicks the app's search button.</strong> Those versions have no Enter action for accessibility services, so Webmote clicks the search, send or go button the app shows instead; an app without one won't search on Enter. Some Android 9 and 10 TVs also route volume through their own service; Webmote tries each way of changing it until the level moves.</li>
+  <li><strong>Android 8 and older aren't supported.</strong></li>
   <li><strong>Android Chrome won't install it as a full app over HTTP.</strong> Browsers only install web apps from HTTPS, which a TV on a private address can't get. iPhone home-screen web apps open full screen anyway; on Android use the full-screen button.</li>
   <li><strong>Some apps ignore the keyboard.</strong> Apps that draw their own on-screen keyboard instead of a real text box can't receive typed text; use the D-pad there. Netflix is the exception: type, then press Enter to search it.</li>
   <li><strong>The remote service has to stay on.</strong> Some TVs turn accessibility services off after an update or when memory is short; open Webmote on the TV to see whether it's on.</li>
@@ -156,6 +158,10 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <h2>Tested On</h2>
 
 <p>MOKA R8G (Android 14). Verified from a computer on the same network: pairing with the PIN and refusing a wrong one; calls without a key refused; a request with a host name instead of the TV's address refused; Home, Back, left and right, and TV settings; the Apps list (73 apps), app banners and opening an app, with an app outside the TV launcher list refused; the TV's name and the app in front; "no text box has focus" when there was none; the pairing surviving an app update. The remote page was checked in desktop Chrome against a stand-in for the TV.</p>
+
+<p>ASUS M1G (Android 11): installed and in use; its owner confirmed the remote works.</p>
+
+<p>Wanbo T6 Max projector (Android 9, firmware 20220419), by <a href="https://github.com/dicklamman">@dicklamman</a> (<a href="../../pull/2">#2</a>): pairing, the Apps list and opening apps, Home, Back, Recents, the D-pad, OK, volume, mute and play/pause.</p>
 
 <p>Not tested yet: volume, mute and play/pause (the test TV stayed muted), Turn off, typing into a real text box, and the page on an iPhone or Android phone, including the home-screen app. Reports welcome: <a href="../../issues">open an issue</a>.</p>
 
