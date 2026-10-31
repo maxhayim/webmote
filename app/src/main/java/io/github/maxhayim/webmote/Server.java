@@ -151,7 +151,7 @@ final class Server {
             boolean done = Json.isTrue(r.body, "enter") ? service.enter(text) : text != null && service.type(text);
             if (done) ok(out, true);
             else if (service.searchesOnEnter()) json(out, 200, "{\"ok\":false,\"error\":\"This app has its own keyboard. Press Enter to search it.\"}");
-            else json(out, 200, "{\"ok\":false,\"error\":\"No text box has focus on the TV.\"}");
+            else json(out, 200, "{\"ok\":false,\"error\":\"No text box has focus on the TV. Apps that draw their own keyboard, like Netflix, can't be typed into: use the D-pad there.\"}");
         } else if (get && p.equals("/api/apps")) {
             json(out, 200, Apps.json(service));
         } else if (get && p.startsWith("/api/icon/")) {

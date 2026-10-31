@@ -20,7 +20,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -31,14 +31,18 @@ import java.util.Map;
  * before it, the D-pad moves the focus itself and OK clicks what has it);
  * volume goes through the audio service. It listens only for which app comes to the front (to name it on the page),
  * and reads the screen only when the page types: to find the text field that has focus. Apps that draw their own
- * keyboard (Netflix) have no text field to fill, but take a search in a link, so Enter searches there.
+ * keyboard (YouTube) have no text field to fill, but take a search in a link, so Enter searches there.
  */
 public class RemoteService extends AccessibilityService {
     static final int PORT = 8080;
 
     /** Apps with their own keyboard and a search link, by package: the link, before the search words. */
-    private static final Map<String, String> SEARCH_LINKS =
-            Collections.singletonMap("com.netflix.ninja", "nflx://www.netflix.com/search?q=");
+    private static final Map<String, String> SEARCH_LINKS = new HashMap<>();
+
+    static {
+        // YouTube on TV, kids profiles included: it stays on the profile in use.
+        SEARCH_LINKS.put("com.google.android.youtube.tv", "https://www.youtube.com/results?search_query=");
+    }
 
     static volatile RemoteService running;
     private static Auth auth;
