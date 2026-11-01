@@ -3,29 +3,28 @@ package io.github.maxhayim.webmote;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.LinkAddress;
-import android.net.LinkProperties;
-import android.net.Network;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.net.Inet4Address;
-
 /**
- * The tile and module card open this: the address to open on a phone or computer, the PIN that pairs it, and whether
+ * The tile and module card open this: the address to open on a phone or computer (and a QR code of it, for a phone's
+ * camera), the PIN that pairs it, and whether
  * the remote service is on. New PIN signs every paired device out.
  */
 public class MainActivity extends Activity {
     private final Handler main = new Handler(Looper.getMainLooper());
     private LinearLayout rows;
     private TextView address, pin, status;
+    private ImageView qr;
+    private String qrFor;
     /** OK pressed once on New PIN: a second press makes it. */
     private boolean newPinArmed;
 
@@ -40,7 +39,7 @@ public class MainActivity extends Activity {
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.addView(text(getString(R.string.app_name), 28, 0xFFFFFFFF));
-        left.addView(text("On a phone or computer on this Wi-Fi, open", 16, 0xFF8B949E), lp(px(28)));
+        left.addView(text("On a phone or computer on this Wi-Fi or hotspot, open", 16, 0xFF8B949E), lp(px(28)));
         address = text("", 34, 0xFF8FA8FF);
         left.addView(address, lp(px(6)));
         left.addView(text("and pair it with this PIN", 16, 0xFF8B949E), lp(px(26)));
@@ -54,8 +53,11 @@ public class MainActivity extends Activity {
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(px(32), px(44), 0, 0);
+        qr = new ImageView(this);
+        qr.setVisibility(ImageView.GONE);
+        right.addView(qr, new LinearLayout.LayoutParams(px(150), px(150)));
         status = text("", 15, 0xFF8B949E);
-        right.addView(status);
+        right.addView(status, lp(px(12)));
         rows = new LinearLayout(this);
         rows.setOrientation(LinearLayout.VERTICAL);
         right.addView(rows, lp(px(12)));
@@ -80,8 +82,9 @@ public class MainActivity extends Activity {
         rows.removeAllViews();
         Auth auth = RemoteService.auth(this);
         RemoteService svc = RemoteService.running;
-        String ip = ip();
+        String ip = Net.address(this);
         int port = svc == null ? -1 : svc.port();
+        if (svc == null || port < 0) showQr(null);
         if (svc == null) {
             address.setText("Remote service is off");
             status.setText("Switch on the remote service below (Accessibility, Webmote) to start the page.");
@@ -89,7 +92,9 @@ public class MainActivity extends Activity {
             address.setText("Starting…");
             main.postDelayed(this::build, 700);
         } else {
-            address.setText(ip == null ? "No network" : "http://" + ip + (port == 80 ? "" : ":" + port));
+            String url = ip == null ? null : "http://" + ip + (port == 80 ? "" : ":" + port);
+            address.setText(url == null ? "No network" : url);
+            showQr(url);
             int n = auth.phones();
             status.setText(n == 0 ? "No devices paired yet." : n + (n == 1 ? " device paired." : " devices paired."));
         }
@@ -123,15 +128,29 @@ public class MainActivity extends Activity {
         rows.getChildAt(keep).requestFocus();
     }
 
-    private String ip() {
-        ConnectivityManager cm = getSystemService(ConnectivityManager.class);
-        Network n = cm.getActiveNetwork();
-        LinkProperties p = n == null ? null : cm.getLinkProperties(n);
-        if (p == null) return null;
-        for (LinkAddress a : p.getLinkAddresses()) {
-            if (a.getAddress() instanceof Inet4Address) return a.getAddress().getHostAddress();
+    /** The QR code of {@code url}, white on black with a quiet zone, or none. */
+    private void showQr(String url) {
+        if (url != null && url.equals(qrFor)) return;
+        qrFor = url;
+        boolean[][] m = url == null ? null : Qr.encode(url);
+        if (m == null) {
+            qr.setVisibility(ImageView.GONE);
+            return;
         }
-        return null;
+        int n = m.length + 8;
+        Bitmap b = Bitmap.createBitmap(n, n, Bitmap.Config.ARGB_8888);
+        for (int y = 0; y < n; y++) {
+            for (int x = 0; x < n; x++) {
+                int mx = x - 4, my = y - 4;
+                boolean dark = mx >= 0 && my >= 0 && mx < m.length && my < m.length && m[my][mx];
+                b.setPixel(x, y, dark ? 0xFF000000 : 0xFFFFFFFF);
+            }
+        }
+        android.graphics.drawable.BitmapDrawable d = new android.graphics.drawable.BitmapDrawable(getResources(), b);
+        d.setFilterBitmap(false); // sharp modules when scaled up
+        qr.setImageDrawable(d);
+        qr.setScaleType(ImageView.ScaleType.FIT_START);
+        qr.setVisibility(ImageView.VISIBLE);
     }
 
     private Row add(Row r) {

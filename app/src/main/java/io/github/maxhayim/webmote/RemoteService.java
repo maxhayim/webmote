@@ -128,11 +128,9 @@ public class RemoteService extends AccessibilityService {
             case "vol_up": return volume(audio, AudioManager.ADJUST_RAISE);
             case "vol_down": return volume(audio, AudioManager.ADJUST_LOWER);
             case "mute": return volume(audio, AudioManager.ADJUST_TOGGLE_MUTE);
-            case "play_pause":
-                long t = SystemClock.uptimeMillis();
-                audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0));
-                audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, 0));
-                return true;
+            case "play_pause": return media(audio, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            case "next": return media(audio, KeyEvent.KEYCODE_MEDIA_NEXT);
+            case "previous": return media(audio, KeyEvent.KEYCODE_MEDIA_PREVIOUS);
             case "settings":
                 return start(new Intent(Settings.ACTION_SETTINGS));
             default:
@@ -312,6 +310,22 @@ public class RemoteService extends AccessibilityService {
         }
     }
 
+    /** A media key, to whichever app is playing. */
+    private static boolean media(AudioManager audio, int code) {
+        long t = SystemClock.uptimeMillis();
+        audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_DOWN, code, 0));
+        audio.dispatchMediaKeyEvent(new KeyEvent(t, t, KeyEvent.ACTION_UP, code, 0));
+        return true;
+    }
+
+    /**
+     * "tv" for a TV, "touch" for anything else: a car head unit or a tablet, which get the touch layout on the page and
+     * their phone-style apps.
+     */
+    String kind() {
+        return Apps.isTv(this) ? "tv" : "touch";
+    }
+
     /** The name the TV goes by in its settings, for the page title and the API. */
     String tvName() {
         String name = Settings.Global.getString(getContentResolver(), Settings.Global.DEVICE_NAME);
@@ -338,6 +352,7 @@ public class RemoteService extends AccessibilityService {
             }
         }
         return "{\"tv\":" + Json.quote(tvName())
+                + ",\"kind\":" + Json.quote(kind())
                 + ",\"app\":" + Json.quote(app)
                 + ",\"volume\":" + audio.getStreamVolume(AudioManager.STREAM_MUSIC)
                 + ",\"max\":" + audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-kind="%KIND%">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -59,6 +59,19 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); font-weight: 600; letter-spacing: .04em; }
 .pad .ok:active, .pad .ok.on { background: var(--accent); color: var(--accent-ink); }
 
+/* Track controls: in place of the D-pad on a car screen or tablet, which are worked by touch */
+.media { display: none; align-items: center; justify-content: center; gap: 20px; margin: 18px auto 0; }
+.media .round { --b: 84px; }
+.media .play { --b: 116px; background: var(--accent); color: var(--accent-ink); }
+.media .play:active, .media .play.on { background: var(--text); }
+.recents { display: none !important; }
+[data-kind="touch"] .media { display: flex; }
+[data-kind="touch"] .recents { display: grid !important; }
+[data-kind="touch"] .pad, [data-kind="touch"] .power, [data-kind="touch"] .tv-only { display: none !important; }
+[data-kind="touch"] .apps { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+[data-kind="touch"] .app-tile { align-items: center; text-align: center; }
+[data-kind="touch"] .app-tile .art { aspect-ratio: 1; width: 64px; border-radius: 16px; background-size: 80%; }
+
 /* Button rows */
 .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
 .round { width: var(--b); height: var(--b); border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
@@ -89,6 +102,9 @@ svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width:
   .who b { font-size: 21px; }
   .who span { font-size: 15px; }
   .pad { width: min(68vh, 42vw, 620px); margin: auto; }
+  .media { margin: auto; gap: 4vw; }
+  .media .round { --b: clamp(84px, 16vh, 140px); }
+  .media .play { --b: clamp(116px, 24vh, 200px); }
   .pad .arrow svg { width: 40px; height: 40px; }
   .pad .ok { font-size: 20px; }
   .side { display: flex; flex-direction: column; justify-content: center; gap: 8vh; }
@@ -129,7 +145,7 @@ input:focus { border-color: var(--accent); }
 
   <section id="pair" class="pair hidden">
     <h1>Webmote</h1>
-    <p>The TV is showing its PIN in a corner now. Type it here; this browser stays paired.</p>
+    <p id="pairText">The TV is showing its PIN in a corner now. Type it here; this browser stays paired.</p>
     <input id="pin" class="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="PIN">
     <div id="pairNote" class="note" role="status"></div>
     <button id="pairBtn" class="primary" disabled>Pair</button>
@@ -143,13 +159,13 @@ input:focus { border-color: var(--accent); }
         <svg viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg>
       </button>
       <div class="who">
-        <b id="tvName">TV</b>
+        <b id="tvName">%TV%</b>
         <span><i id="dot" class="dot"></i><span id="appName">Connecting…</span></span>
       </div>
       <button id="fullBtn" class="icon hidden" aria-label="Full screen" title="Full screen">
         <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </button>
-      <button data-key="settings" class="icon" aria-label="TV settings" title="TV settings">
+      <button data-key="settings" class="icon" aria-label="Settings" title="Settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
     </div>
@@ -160,6 +176,12 @@ input:focus { border-color: var(--accent); }
       <button class="arrow right" data-key="right" data-repeat aria-label="Right"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
       <button class="arrow down" data-key="down" data-repeat aria-label="Down"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
       <button class="ok" data-key="ok" aria-label="OK">OK</button>
+    </div>
+
+    <div class="media" role="group" aria-label="Tracks">
+      <button class="round" data-key="previous" aria-label="Previous track"><svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="m19 5-10 7 10 7z"/></svg></button>
+      <button class="round play" data-key="play_pause" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path d="m6 4 8 8-8 8z"/><path d="M17 5v14M21 5v14"/></svg></button>
+      <button class="round" data-key="next" aria-label="Next track"><svg viewBox="0 0 24 24"><path d="M18 5v14"/><path d="m5 5 10 7-10 7z"/></svg></button>
     </div>
 
     <div class="side">
@@ -173,6 +195,7 @@ input:focus { border-color: var(--accent); }
         <div class="row" style="gap:14px">
           <button class="round" data-key="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
           <button class="round" data-key="home" aria-label="Home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+          <button class="round recents" data-key="recents" aria-label="Recent apps"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
         </div>
         <div class="vol" id="vol"><i></i></div>
         <div class="voltext" id="volText"> </div>
@@ -189,7 +212,7 @@ input:focus { border-color: var(--accent); }
       <button class="chip" id="kbBtn"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard</button>
     </div>
     </div>
-    <div class="hint">Keys: arrows, Enter (OK), Backspace or Esc (Back), H (Home), + and − (volume), M (mute), Space (play/pause), K (keyboard), A (apps)</div>
+    <div class="hint">Keys: arrows, Enter (OK), Backspace or Esc (Back), H (Home), + and − (volume), M (mute), Space (play/pause), N and P (next and previous track), K (keyboard), A (apps)</div>
   </section>
 </div>
 
@@ -202,7 +225,7 @@ input:focus { border-color: var(--accent); }
 
 <div id="kbSheet" class="scrim hidden">
   <div class="sheet" role="dialog" aria-label="Keyboard">
-    <h2>Type on the TV <button class="icon" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
+    <h2><span id="kbTitle">Type on the TV</span> <button class="icon" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></h2>
     <input id="kbInput" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Pick a text box on the TV, then type">
     <div id="kbNote" class="note" role="status"></div>
   </div>
@@ -214,6 +237,15 @@ input:focus { border-color: var(--accent); }
 (() => {
   const $ = id => document.getElementById(id);
   const KEY = "webmote-key";
+  // "tv", or "touch" for a car head unit or tablet; the server fills it in (a raw "%KIND%" when the page is opened as a file).
+  const touch = document.documentElement.dataset.kind === "touch";
+  const THE = touch ? "the screen" : "the TV";
+  if (touch) {
+    $("pairText").textContent = "The screen is showing its PIN in a corner now. Type it here; this browser stays paired.";
+    $("showPin").textContent = "Show the PIN on the screen again";
+    $("kbTitle").textContent = "Type on the screen";
+    $("kbInput").placeholder = "Pick a text box on the screen, then type";
+  }
   let key = null;
   try { key = localStorage.getItem(KEY); } catch (e) {}
 
@@ -261,7 +293,7 @@ input:focus { border-color: var(--accent); }
         $("pin").value = ""; $("pin").focus();
       }
     } catch (e) {
-      $("pairNote").textContent = "Can't reach the TV. Is it on, and on this Wi-Fi?";
+      $("pairNote").textContent = `Can't reach ${THE}. Is it on, and on this Wi-Fi or hotspot?`;
       $("pairBtn").disabled = false;
     }
   }
@@ -301,7 +333,7 @@ input:focus { border-color: var(--accent); }
   // Desktop keyboard.
   const keymap = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Enter: "ok",
     Backspace: "back", Escape: "back", h: "home", H: "home", "+": "vol_up", "=": "vol_up", "-": "vol_down",
-    m: "mute", M: "mute", " ": "play_pause" };
+    m: "mute", M: "mute", " ": "play_pause", n: "next", N: "next", p: "previous", P: "previous" };
   document.addEventListener("keydown", e => {
     if (!key || e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey) return;
     if (!$("appsSheet").classList.contains("hidden") || !$("kbSheet").classList.contains("hidden")) {
@@ -318,7 +350,7 @@ input:focus { border-color: var(--accent); }
   let online = true;
   function setOnline(on) {
     online = on; $("dot").classList.toggle("off", !on);
-    if (!on) $("appName").textContent = "Can't reach the TV";
+    if (!on) $("appName").textContent = `Can't reach ${THE}`;
   }
   async function poll() {
     if (!key || document.hidden) return;
@@ -381,7 +413,7 @@ input:focus { border-color: var(--accent); }
       try {
         const j = await (await api("/api/text", { text: e.target.value })).json();
         $("kbNote").textContent = j.ok ? "" : j.error;
-      } catch (err) { $("kbNote").textContent = "Can't reach the TV."; }
+      } catch (err) { $("kbNote").textContent = `Can't reach ${THE}.`; }
     }, 180);
   });
   $("kbInput").addEventListener("keydown", async e => {

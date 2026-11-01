@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -14,7 +15,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** The TV's apps for the page's Apps sheet: those with a TV launcher entry, by name, with their banners. */
+/**
+ * The apps for the page's Apps sheet, by name: on a TV those with a TV launcher entry, with their banners; on a car head
+ * unit or a tablet those in its app drawer, with their icons.
+ */
 final class Apps {
     private static final LruCache<String, byte[]> icons = new LruCache<String, byte[]>(4 * 1024 * 1024) {
         @Override
@@ -26,8 +30,16 @@ final class Apps {
     private Apps() {
     }
 
+    /** A TV: Android TV or Google TV, or anything in TV mode. */
+    static boolean isTv(Context c) {
+        if (c.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) return true;
+        int mode = c.getResources().getConfiguration().uiMode & Configuration.UI_MODE_TYPE_MASK;
+        return mode == Configuration.UI_MODE_TYPE_TELEVISION;
+    }
+
     private static List<ResolveInfo> tvApps(Context c) {
-        Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER);
+        Intent i = new Intent(Intent.ACTION_MAIN)
+                .addCategory(isTv(c) ? Intent.CATEGORY_LEANBACK_LAUNCHER : Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> found = c.getPackageManager().queryIntentActivities(i, 0);
         List<ResolveInfo> out = new ArrayList<>();
         for (ResolveInfo r : found) if (!r.activityInfo.packageName.equals(c.getPackageName())) out.add(r);

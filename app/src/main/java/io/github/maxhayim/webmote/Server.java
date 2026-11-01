@@ -105,7 +105,7 @@ final class Server {
         String p = r.path;
         boolean get = r.method.equals("GET"), post = r.method.equals("POST");
         if (get && (p.equals("/") || p.equals("/index.html"))) {
-            Http.write(out, 200, "text/html; charset=utf-8", named(asset("index.html"), html(service.tvName())), false);
+            Http.write(out, 200, "text/html; charset=utf-8", named(asset("index.html"), html(service.tvName()), service.kind()), false);
         } else if (get && p.equals("/manifest.webmanifest")) {
             String tv = Json.quote(service.tvName());
             Http.write(out, 200, "application/manifest+json", named(asset("manifest.webmanifest"), tv.substring(1, tv.length() - 1)), false);
@@ -179,6 +179,11 @@ final class Server {
     /** The asset with each {@code %TV%} swapped for the TV's name, already escaped for where it goes. */
     static byte[] named(byte[] asset, String tv) {
         return bytes(new String(asset, StandardCharsets.UTF_8).replace("%TV%", tv));
+    }
+
+    /** The page, with the device's kind ("tv" or "touch") for its layout, and its name. */
+    static byte[] named(byte[] asset, String tv, String kind) {
+        return bytes(new String(asset, StandardCharsets.UTF_8).replace("%KIND%", kind).replace("%TV%", tv));
     }
 
     static String html(String s) {

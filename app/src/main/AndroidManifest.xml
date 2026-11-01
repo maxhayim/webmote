@@ -9,7 +9,8 @@
     <!-- This TV's address, to show on its screen. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- The Apps sheet: apps with a TV launcher entry. The home screen too, to name it on the page. -->
+    <!-- The Apps sheet: apps with a TV launcher entry (or, on a car head unit or tablet, an app drawer entry).
+         The home screen too, to name it on the page. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -18,6 +19,10 @@
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 

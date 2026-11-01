@@ -3,12 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>A remote for your Android TV, in your phone's or computer's browser</strong>
+  <strong>A remote for your Android TV or car head unit, in your phone's or computer's browser</strong>
 </p>
 
 <p align="center">
   <a href="https://developer.android.com/tv">
-    <img src="https://img.shields.io/badge/Android%20TV-13%2B-3DDC84" alt="Android TV 13+">
+    <img src="https://img.shields.io/badge/Android-9%2B-3DDC84" alt="Android 9+">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
@@ -22,6 +22,8 @@
 <p>Webmote is an open-source remote for Android TV and Google TV that works in a web browser. Install it on the TV, open the address it shows on any phone, tablet or computer on the same Wi-Fi, type the PIN from the TV screen, and you have a remote like Google TV's: D-pad, OK, Back, Home, volume, play/pause, an Apps sheet and a keyboard for typing searches.</p>
 
 <p>There is nothing to install on the phone and no account to sign in to, and nothing leaves your home network. Add the page to your phone's home screen and it opens full screen, like an app.</p>
+
+<p>It also runs on Android car head units and tablets, where passengers get big track controls, volume, Back, Home, recent apps, the apps and a keyboard, over the car's hotspot. See <a href="#in-the-car">In the car</a>.</p>
 
 <h2>Screenshots</h2>
 
@@ -43,12 +45,14 @@
 
 <ul>
   <li><strong>Google-TV-style remote</strong>: D-pad with OK, Back, Home, volume up/down, mute, play/pause, and TV settings</li>
+  <li><strong>Car head units and tablets</strong>: a touch layout with previous, play/pause and next in place of the D-pad, recent apps, and the device's own app drawer; works over a hotspot with no internet</li>
+  <li><strong>QR code</strong>: Webmote's screen shows one for its address, so a phone opens the remote by pointing its camera at it</li>
   <li><strong>Turn off</strong>: hold the power button for a second, so a stray tap doesn't</li>
   <li><strong>Apps sheet</strong>: every app on the TV with its banner; tap one to open it</li>
   <li><strong>Keyboard</strong>: type on your phone and the text appears in the TV's focused search or text box, then Enter to search</li>
   <li><strong>Now playing</strong>: the TV's name, the app in front, and the volume, kept up to date</li>
   <li><strong>Hold to repeat</strong> on the D-pad and volume, with a small vibration on phones that have it</li>
-  <li><strong>Desktop keyboard shortcuts</strong>: arrows, Enter, Backspace or Esc, H, + and −, M, Space, K for the keyboard, A for apps</li>
+  <li><strong>Desktop keyboard shortcuts</strong>: arrows, Enter, Backspace or Esc, H, + and −, M, Space, N and P for next and previous track, K for the keyboard, A for apps</li>
   <li><strong>Home-screen app</strong>: a web app manifest and icons, so it opens full screen from the home screen</li>
   <li><strong>Paired, not open</strong>: a 6-digit PIN pairs each browser; wrong guesses lock pairing for longer each time; <strong>New PIN</strong> signs every device out. See <a href="#security">Security</a></li>
   <li><strong>Small</strong>: one ~45 KB APK, plain Java, no libraries, no tracking</li>
@@ -58,8 +62,8 @@
 <h2>Requirements</h2>
 
 <ul>
-  <li>An Android TV or Google TV device on <strong>Android 9 or newer</strong> (on Android 13 and newer the D-pad works everywhere; see Known Limitations for 9 to 12)</li>
-  <li>A phone, tablet or computer with a modern browser, <strong>on the same network</strong> as the TV</li>
+  <li>An Android TV or Google TV device, or an Android car head unit or tablet, on <strong>Android 9 or newer</strong> (on Android 13 and newer the D-pad works everywhere; see Known Limitations for 9 to 12)</li>
+  <li>A phone, tablet or computer with a modern browser, <strong>on the same network</strong> as the TV (in a car: the same hotspot)</li>
   <li>To install: a computer with <a href="https://developer.android.com/tools/releases/platform-tools">ADB</a> and Developer options → Network debugging on the TV, or any sideloading app on the TV</li>
 </ul>
 
@@ -71,7 +75,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.2.1.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.3.0.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
@@ -91,8 +95,8 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <h2>Usage</h2>
 
 <ol>
-  <li>Open <strong>Webmote</strong> on the TV. It shows an address like <code>http://192.168.1.20:8080</code> and a 6-digit PIN.</li>
-  <li>Open that address in the browser on your phone or computer, and type the PIN. The TV also shows the PIN in a corner while the browser is on the pairing page, so after the first time you can skip opening Webmote on the TV. The browser stays paired.</li>
+  <li>Open <strong>Webmote</strong> on the TV. It shows an address like <code>http://192.168.1.20:8080</code>, a QR code of it, and a 6-digit PIN.</li>
+  <li>Point your phone's camera at the QR code, or open the address in the browser on your phone or computer, and type the PIN. The TV also shows the PIN in a corner while the browser is on the pairing page, so after the first time you can skip opening Webmote on the TV. The browser stays paired.</li>
   <li>Add it to your home screen:
     <ul>
       <li><strong>iPhone and iPad (Safari)</strong>: Share → <strong>Add to Home Screen</strong>. It opens full screen, like an app.</li>
@@ -107,6 +111,19 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <p>On the TV, <strong>New PIN</strong> (press OK twice) makes a new PIN and signs out every paired phone and computer.</p>
 
 <p>For scripts and home automation, the same calls the page makes are documented in <a href="docs/api.md">docs/api.md</a>.</p>
+
+<h3 id="in-the-car">In the car</h3>
+
+<p>Aftermarket Android head units (the Android tablets built into a car stereo) run Webmote like a TV, with a layout for touch: previous, play/pause and next, volume, Back, Home, recent apps, the head unit's apps and a keyboard. There's no home Wi-Fi in a car, so join the phone and the head unit through a hotspot, either way round:</p>
+
+<ul>
+  <li><strong>The head unit on the phone's hotspot</strong> (the usual way, for the head unit's internet): open Webmote on the head unit and scan its QR code with the phone.</li>
+  <li><strong>The phone on the head unit's hotspot</strong>, where the head unit has one: the same, with no mobile data needed. Its address is often <code>http://192.168.43.1:8080</code>.</li>
+</ul>
+
+<p>Webmote shows the hotspot's address even when the head unit's mobile data is its active network. A hotspot's address can change between drives, so scan the code again if the saved page can't reach the head unit. <strong>It's for passengers:</strong> the driver keeps their eyes on the road.</p>
+
+<p>Cars with Android built in from the factory (Android Automotive, such as Polestar, Volvo and some GM models) don't allow apps like this, so Webmote can't run there.</p>
 
 <h2>How It Works</h2>
 
@@ -127,7 +144,8 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
   <li><strong>D-pad, OK, Back, Home and Turn off</strong> are Android's own global actions for accessibility services, the same ones a switch-access device uses. No ADB, no root, and no input injection.</li>
   <li><strong>Volume and mute</strong> go through the audio service, and the TV shows its own volume bar. <strong>Play/pause</strong> is a media key, delivered to whichever app is playing.</li>
   <li><strong>Typing</strong> finds the text box that has focus on the TV and sets its text, like the Google TV app's keyboard does. YouTube (kids profiles included) draws its own keyboard with no text box behind it, so there Enter opens YouTube's search for what you typed. Netflix also draws its own keyboard but takes no search from outside, so it can't be typed into: use the D-pad on its keyboard.</li>
-  <li><strong>Apps</strong> are the ones with a TV launcher entry, opened the way the home screen opens them.</li>
+  <li><strong>Apps</strong> are the ones with a TV launcher entry (on a head unit or tablet, the app drawer's), opened the way the home screen opens them.</li>
+  <li><strong>TV or touch</strong>: a device that isn't a TV (no Android TV feature, not in TV mode) gets the touch layout, with track controls in place of the D-pad.</li>
 </ul>
 
 <h2>Security</h2>
@@ -163,7 +181,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <p>Wanbo T6 Max projector (Android 9, firmware 20220419), by <a href="https://github.com/dicklamman">@dicklamman</a> (<a href="../../pull/2">#2</a>): pairing, the Apps list and opening apps, Home, Back, Recents, the D-pad, OK, volume, mute and play/pause.</p>
 
-<p>Not tested yet: volume, mute and play/pause (the test TV stayed muted), Turn off, typing into a real text box, and the page on an iPhone or Android phone, including the home-screen app. Reports welcome: <a href="../../issues">open an issue</a>.</p>
+<p>Not tested yet: a car head unit or tablet (the touch layout, the app drawer list and the hotspot address); volume, mute and play/pause (the test TV stayed muted), Turn off, typing into a real text box, and the page on an iPhone or Android phone, including the home-screen app. Reports welcome: <a href="../../issues">open an issue</a>.</p>
 
 <h2>License</h2>
 

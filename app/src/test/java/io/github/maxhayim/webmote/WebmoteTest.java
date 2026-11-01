@@ -156,4 +156,33 @@ public class WebmoteTest {
         assertEquals("<title>Max's &lt;TV&gt; &amp; &quot;more&quot; - Webmote</title>",
                 new String(Server.named(page, Server.html("Max's <TV> & \"more\"")), StandardCharsets.UTF_8));
     }
+
+    @Test
+    public void fillsInTheKindOfDevice() {
+        byte[] page = "<html data-kind=\"%KIND%\"><b>%TV%</b>".getBytes(StandardCharsets.UTF_8);
+        assertEquals("<html data-kind=\"touch\"><b>%KIND%</b>",
+                new String(Server.named(page, "%KIND%", "touch"), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void makesAQrCodeOfTheAddress() {
+        boolean[][] v2 = Qr.encode("http://192.168.43.1:8080");
+        assertEquals(25, v2.length);
+        // Finder pattern corners and centres, the separator, and the dark module by the bottom-left finder.
+        for (int[] c : new int[][]{{0, 0}, {6, 6}, {3, 3}, {0, 18}, {3, 21}, {18, 0}, {21, 3}}) assertTrue(v2[c[1]][c[0]]);
+        assertFalse(v2[7][7]);
+        assertFalse(v2[1][1]);
+        assertTrue(v2[25 - 8][8]);
+        // Timing pattern.
+        for (int i = 8; i < 17; i++) assertEquals(i % 2 == 0, v2[6][i]);
+        assertEquals(21, Qr.encode("hi").length);
+        assertEquals(29, Qr.encode("http://255.255.255.255:65535").length);
+        assertNull(Qr.encode("http://192.168.100.200:8080/a-much-longer-path-than-fits"));
+    }
+
+    @Test
+    public void knowsWifiAndHotspotInterfaces() {
+        for (String n : new String[]{"wlan0", "wlan1", "ap0", "swlan0", "softap0"}) assertTrue(n, Net.isWifi(n));
+        for (String n : new String[]{"rmnet_data0", "eth0", "lo", "tun0", null}) assertFalse(String.valueOf(n), Net.isWifi(n));
+    }
 }

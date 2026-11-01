@@ -38,9 +38,9 @@ curl -H "X-Webmote-Key: $KEY" -X POST -d '{"key":"home"}' $TV/api/key
 | `POST /api/key` | `{"key": "<name>"}` | `{"ok": true}`, or `false` for an unknown name or a key the TV refused |
 | `POST /api/text` | `{"text": "..."}` replaces the text in the TV's focused text box | `{"ok": true}`, or `{"ok": false, "error": "No text box has focus on the TV."}` |
 | `POST /api/text` | `{"enter": true}` presses the keyboard's Enter (search, go); with `"text"`, sets the text first. In an app with its own keyboard and no text box (YouTube), searches the app for `"text"` | as above |
-| `GET /api/status` | | `{"tv": "Living Room TV", "app": "YouTube", "volume": 18, "max": 100, "muted": false}` |
-| `GET /api/apps` | | `[{"label": "YouTube", "pkg": "com.google.android.youtube.tv"}, …]`, by name |
-| `GET /api/icon/<pkg>.png` | | The app's banner as a PNG (at most 320 × 180), or 404 |
+| `GET /api/status` | | `{"tv": "Living Room TV", "kind": "tv", "app": "YouTube", "volume": 18, "max": 100, "muted": false}`; `kind` is `"touch"` on a car head unit or tablet |
+| `GET /api/apps` | | `[{"label": "YouTube", "pkg": "com.google.android.youtube.tv"}, …]`, by name; on a car head unit or tablet, the app drawer's apps |
+| `GET /api/icon/<pkg>.png` | | The app's banner (or icon, where it has no banner) as a PNG (at most 320 × 180), or 404 |
 | `POST /api/launch` | `{"pkg": "<package>"}` | `{"ok": true}`; only apps from `/api/apps` can be opened |
 
 Key names:
@@ -51,6 +51,7 @@ Key names:
 | `back`, `home`, `recents` | Back, Home, recent apps |
 | `vol_up`, `vol_down`, `mute` | Media volume; `mute` toggles |
 | `play_pause` | Play/pause in the app that's playing |
+| `next`, `previous` | Next and previous track in the app that's playing |
 | `settings` | Opens the TV's settings |
 | `off` | Turns the screen off (standby). Webmote can't turn it back on |
 
