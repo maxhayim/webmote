@@ -123,6 +123,8 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <p>Webmote shows the hotspot's address even when the head unit's mobile data is its active network. A hotspot's address can change between drives, so scan the code again if the saved page can't reach the head unit. <strong>It's for passengers:</strong> the driver keeps their eyes on the road.</p>
 
+<p>To trim a head unit's preinstalled apps first, or try another launcher on it, see <a href="https://github.com/maxhayim/CleanYourHeadUnit">CleanYourHeadUnit</a>.</p>
+
 <p>Cars with Android built in from the factory (Android Automotive, such as Polestar, Volvo and some GM models) don't allow apps like this, so Webmote can't run there.</p>
 
 <h2>How It Works</h2>
@@ -198,12 +200,13 @@ Full license text: https://opensource.org/licenses/MIT
 
 <ul>
   <li><a href="https://github.com/Gathin23/cleanyourtv">Clean Your TV</a>: debloat tools and a lean launcher for Android TV, whose module cards Webmote supports</li>
+  <li><a href="https://github.com/maxhayim/CleanYourHeadUnit">CleanYourHeadUnit</a>: reversible, non-root debloat, privacy shield and launchers for aftermarket Android car head units, the devices Webmote's touch layout is for</li>
   <li><a href="https://github.com/maxhayim/corner-player">Corner Player</a>: your own camera or stream in a corner of the TV, over any app</li>
   <li><a href="https://github.com/maxhayim/ShackScreen">ShackScreen</a>: an Android TV dashboard for radio operators</li>
 </ul>
 
 <h2>Acknowledgments</h2>
 
-<p>The remote's layout follows the familiar Google TV remote; the icons and art are Webmote's own.<br>
+<p>The remote's layout follows the familiar Google TV remote; the icons and art are Webmote's own. Car head unit support was shaped alongside <a href="https://github.com/maxhayim/CleanYourHeadUnit">CleanYourHeadUnit</a>.<br>
 Android™, Android TV™ and Google TV™ are trademarks of Google LLC, and iPhone® and Safari® are trademarks of Apple Inc.; they are used here solely to describe compatibility. Webmote is not affiliated with or endorsed by Google or Apple.
 All other trademarks are the property of their respective owners.</p>
