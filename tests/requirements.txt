@@ -1,4 +1,4 @@
 pytest-homeassistant-custom-component
-# Home Assistant 2025.1 pins pycares 4; pycares 5 leaves a thread its tests reject.
-pycares<5
+# The DNS library Home Assistant 2025.1 was tested with; newer ones leave a thread its tests reject.
+pycares==4.5.0
 zeroconf
