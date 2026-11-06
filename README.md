@@ -15,6 +15,9 @@
   </a>
   <img src="https://img.shields.io/badge/Remote-iPhone%20%7C%20Android%20%7C%20Desktop-lightgrey" alt="Remote: iPhone, Android, desktop">
   <img src="https://img.shields.io/badge/App%20to%20install-none-8FA8FF" alt="No app to install on the phone">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=maxhayim&amp;repository=webmote&amp;category=integration">
+    <img src="https://img.shields.io/badge/HACS-Custom-41BDF5" alt="Home Assistant: add with HACS">
+  </a>
 </p>
 
 <h1>Webmote</h1>
@@ -134,8 +137,20 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <p>Webmote comes with a Home Assistant integration, in <a href="custom_components/webmote">custom_components/webmote</a>. Each TV running Webmote 0.4.0 or newer announces itself on the network, so Home Assistant finds it the way it finds a Chromecast, and pairing takes the same PIN as a phone.</p>
 
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=maxhayim&amp;repository=webmote&amp;category=integration">
+    <img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant and add Webmote in HACS">
+  </a>
+  &nbsp;
+  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=webmote">
+    <img src="https://my.home-assistant.io/badges/config_flow_start.svg" alt="Open your Home Assistant and add a Webmote TV">
+  </a>
+</p>
+
+<p align="center"><sub>Left: opens Webmote in HACS in your own Home Assistant. Right: once it's downloaded, adds a TV by its address (TVs on the network are offered under Discovered by themselves).</sub></p>
+
 <ol>
-  <li>In <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
+  <li>Press the first button above and confirm, or in <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
   <li>With the TV on, open <strong>Settings → Devices &amp; services</strong>. The TV is listed under <strong>Discovered</strong>; choose <strong>Add</strong>. (Not listed, for instance on another subnet: <strong>Add integration → Webmote</strong> and type the address from Webmote's screen.)</li>
   <li>The TV shows a PIN in a corner of its screen. Type it in Home Assistant.</li>
 </ol>
