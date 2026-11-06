@@ -81,7 +81,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.4.0.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.4.1.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
@@ -150,10 +150,23 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <p align="center"><sub>Left: opens Webmote in HACS in your own Home Assistant. Right: once it's downloaded, adds a TV by its address (TVs on the network are offered under Discovered by themselves).</sub></p>
 
 <ol>
-  <li>Press the first button above and confirm, or in <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. Restart even if HACS doesn't ask: Home Assistant only starts looking for Webmote TVs on the network when it starts up. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
+  <li>Press the first button above and confirm, or in <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. Restart even if HACS doesn't ask: Home Assistant only starts looking for Webmote TVs on the network when it starts up. HACS adds a custom repository only once it's connected to GitHub; without that, install it as below.</li>
   <li>With the TV on, open <strong>Settings → Devices &amp; services</strong>. The TV is listed under <strong>Discovered</strong>; choose <strong>Add</strong>. (Not listed, for instance on another subnet: <strong>Add integration → Webmote</strong> and type the address from Webmote's screen.)</li>
   <li>The TV shows a PIN in a corner of its screen. Type it in Home Assistant.</li>
 </ol>
+
+<p><strong>Without HACS</strong> (or with HACS not connected to GitHub), install it from the <a href="../../releases/latest">latest release</a>, then restart Home Assistant and carry on from step 2:</p>
+
+<ul>
+  <li><strong>With the Terminal &amp; SSH add-on</strong>, paste this one line (run it again to update):
+<pre>
+mkdir -p /config/custom_components &amp;&amp; curl -fsSL https://github.com/maxhayim/webmote/releases/latest/download/webmote-home-assistant.tar.gz | tar -xz -C /config/custom_components
+</pre>
+  </li>
+  <li><strong>By hand</strong>: download <code>webmote-home-assistant.zip</code> from the release, unzip it, and put the <code>webmote</code> folder in Home Assistant's <code>config/custom_components</code> folder (with the Samba share or the File editor add-on).</li>
+</ul>
+
+<p>Installed this way, Home Assistant doesn't tell you about updates: watch this repository's releases, and run the line again (or copy the new folder) when there's a new one.</p>
 
 <p>Each TV becomes a device with two entities:</p>
 
