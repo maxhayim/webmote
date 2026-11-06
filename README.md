@@ -25,6 +25,8 @@
 
 <p>It also runs on Android car head units and tablets, where passengers get big track controls, volume, Back, Home, recent apps, the apps and a keyboard, over the car's hotspot. See <a href="#in-the-car">In the car</a>.</p>
 
+<p>And it works with <strong>Home Assistant</strong>: each TV shows up there by itself, and once paired with its PIN it's a media player and a remote for dashboards, automations and voice. See <a href="#home-assistant">Home Assistant</a>.</p>
+
 <h2>Screenshots</h2>
 
 <p align="center">
@@ -46,6 +48,7 @@
 <ul>
   <li><strong>Google-TV-style remote</strong>: D-pad with OK, Back, Home, volume up/down, mute, play/pause, and TV settings</li>
   <li><strong>Car head units and tablets</strong>: a touch layout with previous, play/pause and next in place of the D-pad, recent apps, and the device's own app drawer; works over a hotspot with no internet</li>
+  <li><strong>Home Assistant</strong>: an integration (install with HACS) that finds the TVs on the network, pairs with the PIN, and adds each as a media player (on/off, volume, mute, play/pause, tracks, apps as sources) and a remote (every button, typing and searching)</li>
   <li><strong>QR code</strong>: Webmote's screen shows one for its address, so a phone opens the remote by pointing its camera at it</li>
   <li><strong>Turn off</strong>: hold the power button for a second, so a stray tap doesn't</li>
   <li><strong>Apps sheet</strong>: every app on the TV with its banner; tap one to open it</li>
@@ -75,7 +78,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.3.0.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.4.0.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
@@ -90,7 +93,7 @@ TV_HOST=&lt;tv ip&gt; APK=Webmote-0.3.0.apk ./install.sh
 TV_HOST=&lt;tv ip&gt; ./install.sh
 </pre>
 
-<p>It builds the app and installs it the same way. To build only: <code>./gradlew assembleRelease</code>; the JVM tests run with <code>./gradlew testReleaseUnitTest</code>. Where macOS blocks the stock <code>adb</code>, set <code>CLEANYOURTV</code> to a clone of <a href="https://github.com/Gathin23/cleanyourtv">Clean Your TV</a> with its tools set up, and its <code>tools/tv.py</code> is used instead.</p>
+<p>It builds the app and installs it the same way. To build only: <code>./gradlew assembleRelease</code>; the JVM tests run with <code>./gradlew testReleaseUnitTest</code>, and the Home Assistant integration's with <code>pip install -r tests/requirements.txt</code> then <code>pytest tests</code> (Python 3.12 or newer). Where macOS blocks the stock <code>adb</code>, set <code>CLEANYOURTV</code> to a clone of <a href="https://github.com/Gathin23/cleanyourtv">Clean Your TV</a> with its tools set up, and its <code>tools/tv.py</code> is used instead.</p>
 
 <h2>Usage</h2>
 
@@ -127,6 +130,33 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <p>Cars with Android built in from the factory (Android Automotive, such as Polestar, Volvo and some GM models) don't allow apps like this, so Webmote can't run there.</p>
 
+<h3 id="home-assistant">Home Assistant</h3>
+
+<p>Webmote comes with a Home Assistant integration, in <a href="custom_components/webmote">custom_components/webmote</a>. Each TV running Webmote 0.4.0 or newer announces itself on the network, so Home Assistant finds it the way it finds a Chromecast, and pairing takes the same PIN as a phone.</p>
+
+<ol>
+  <li>In <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
+  <li>With the TV on, open <strong>Settings → Devices &amp; services</strong>. The TV is listed under <strong>Discovered</strong>; choose <strong>Add</strong>. (Not listed, for instance on another subnet: <strong>Add integration → Webmote</strong> and type the address from Webmote's screen.)</li>
+  <li>The TV shows a PIN in a corner of its screen. Type it in Home Assistant.</li>
+</ol>
+
+<p>Each TV becomes a device with two entities:</p>
+
+<ul>
+  <li><strong>Media player</strong>: on while the screen is on, off while the TV sleeps; volume (set, up and down), mute, play/pause, next and previous track, turn off, and the TV's apps as sources (choose one to open it). It works with Home Assistant's media cards, voice ("turn the living room TV volume down") and automations.</li>
+  <li><strong>Remote</strong>: <code>remote.send_command</code> with any button by its API name (<code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>, <code>ok</code>, <code>back</code>, <code>home</code>, <code>recents</code>, <code>settings</code>, <code>vol_up</code>, <code>vol_down</code>, <code>mute</code>, <code>play_pause</code>, <code>next</code>, <code>previous</code>, <code>off</code>); <code>text:words</code> types into the TV's focused text box and <code>search:words</code> also presses Enter (in YouTube, it searches). The apps are its activities: <code>remote.turn_on</code> with an <code>activity</code> opens that app.</li>
+</ul>
+
+<pre>
+action: remote.send_command
+target:
+  entity_id: remote.living_room_tv
+data:
+  command: [home, down, ok]
+</pre>
+
+<p>If the TV's address changes, Home Assistant follows it. If someone presses <strong>New PIN</strong> on the TV, Home Assistant asks to pair again. Like everything on Wi-Fi, it can't turn the TV on: a sleeping TV is off the network. For that, use HDMI-CEC (from a device on the same HDMI chain) or the TV's own Google Home or Android TV Remote support, where it has it.</p>
+
 <h2>How It Works</h2>
 
 <pre>
@@ -147,6 +177,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
   <li><strong>Volume and mute</strong> go through the audio service, and the TV shows its own volume bar. <strong>Play/pause</strong> is a media key, delivered to whichever app is playing.</li>
   <li><strong>Typing</strong> finds the text box that has focus on the TV and sets its text, like the Google TV app's keyboard does. YouTube (kids profiles included) draws its own keyboard with no text box behind it, so there Enter opens YouTube's search for what you typed. Netflix also draws its own keyboard but takes no search from outside, so it can't be typed into: use the D-pad on its keyboard.</li>
   <li><strong>Apps</strong> are the ones with a TV launcher entry (on a head unit or tablet, the app drawer's), opened the way the home screen opens them.</li>
+  <li><strong>On the network</strong>, Webmote announces itself as <code>_webmote._tcp</code> (mDNS, like a printer or a Chromecast) with the TV's name and a random id, never a key, so Home Assistant can find it.</li>
   <li><strong>TV or touch</strong>: a device that isn't a TV (no Android TV feature, not in TV mode) gets the touch layout, with track controls in place of the D-pad.</li>
 </ul>
 

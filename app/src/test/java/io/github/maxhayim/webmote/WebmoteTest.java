@@ -185,4 +185,15 @@ public class WebmoteTest {
         for (String n : new String[]{"wlan0", "wlan1", "ap0", "swlan0", "softap0"}) assertTrue(n, Net.isWifi(n));
         for (String n : new String[]{"rmnet_data0", "eth0", "lo", "tun0", null}) assertFalse(String.valueOf(n), Net.isWifi(n));
     }
+
+    @Test
+    public void readsAVolumeLevel() {
+        assertEquals(7, Json.integer("{\"level\": 7}", "level"));
+        assertEquals(0, Json.integer("{\"level\":0}", "level"));
+        assertEquals(15, Json.integer("{\"x\":1,\"level\":15}", "level"));
+        for (String no : new String[]{"{\"level\":-3}", "{\"level\":2.5}", "{\"level\":\"4\"}", "{}", "{\"level\":1234567890123}"}) {
+            assertEquals(no, -1, Json.integer(no, "level"));
+        }
+        assertEquals(-1, Json.integer(null, "level"));
+    }
 }

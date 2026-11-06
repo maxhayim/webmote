@@ -11,6 +11,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.view.KeyEvent;
@@ -49,6 +50,7 @@ public class RemoteService extends AccessibilityService {
 
     private Server server;
     private PinCard pinCard;
+    private Nsd nsd;
     private volatile String frontPackage;
 
     static synchronized Auth auth(Context c) {
@@ -75,7 +77,8 @@ public class RemoteService extends AccessibilityService {
         running = this;
         pinCard = new PinCard(this);
         server = new Server(this, auth(this));
-        server.start(PORT);
+        nsd = new Nsd(this);
+        server.start(PORT, port -> nsd.start(tvName(), port, deviceId(this), kind()));
     }
 
     @Override
@@ -92,10 +95,27 @@ public class RemoteService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        if (nsd != null) nsd.stop();
         if (server != null) server.stop();
         if (pinCard != null) pinCard.hide();
         if (running == this) running = null;
         super.onDestroy();
+    }
+
+    /**
+     * This device's own id, made up once and kept: Home Assistant tells TVs apart by it, as their names and addresses
+     * can change. Random, so it says nothing about the device.
+     */
+    static synchronized String deviceId(Context c) {
+        SharedPreferences p = c.getApplicationContext().getSharedPreferences("webmote", Context.MODE_PRIVATE);
+        String id = p.getString("id", null);
+        if (id == null) {
+            byte[] raw = new byte[8];
+            new SecureRandom().nextBytes(raw);
+            id = Auth.hex(raw);
+            p.edit().putString("id", id).apply();
+        }
+        return id;
     }
 
     /** The PIN in a corner of the TV, for a device on the pairing page. */
@@ -176,6 +196,18 @@ public class RemoteService extends AccessibilityService {
         int wanted = Math.max(0, Math.min(max, before + (direction == AudioManager.ADJUST_RAISE ? 1 : -1)));
         try {
             audio.setStreamVolume(AudioManager.STREAM_MUSIC, wanted, AudioManager.FLAG_SHOW_UI);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Media volume to {@code level} (0 to the TV's maximum, as in the status); false when the TV refused. */
+    boolean setVolume(int level) {
+        AudioManager audio = getSystemService(AudioManager.class);
+        int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        try {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, Math.min(level, max), AudioManager.FLAG_SHOW_UI);
             return true;
         } catch (RuntimeException e) {
             return false;
@@ -351,9 +383,14 @@ public class RemoteService extends AccessibilityService {
                 // Uninstalled since.
             }
         }
+        PowerManager power = getSystemService(PowerManager.class);
         return "{\"tv\":" + Json.quote(tvName())
+                + ",\"id\":" + Json.quote(deviceId(this))
                 + ",\"kind\":" + Json.quote(kind())
+                + ",\"version\":" + Json.quote(BuildConfig.VERSION_NAME)
+                + ",\"screen\":" + (power == null || power.isInteractive())
                 + ",\"app\":" + Json.quote(app)
+                + ",\"pkg\":" + Json.quote(pkg == null ? "" : pkg)
                 + ",\"volume\":" + audio.getStreamVolume(AudioManager.STREAM_MUSIC)
                 + ",\"max\":" + audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                 + ",\"muted\":" + audio.isStreamMute(AudioManager.STREAM_MUSIC) + "}";

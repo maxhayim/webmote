@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.IntConsumer;
 
 /**
  * The page and its API, for phones and computers on the home network. Everything under /api/ except pairing needs a
@@ -40,7 +41,8 @@ final class Server {
         return port;
     }
 
-    void start(int preferred) {
+    /** Serves on the first free port from {@code preferred}, and tells {@code bound} which. */
+    void start(int preferred, IntConsumer bound) {
         Thread t = new Thread(() -> {
             for (int p = preferred; p < preferred + 10 && socket == null; p++) {
                 try {
@@ -54,6 +56,7 @@ final class Server {
                 }
             }
             ServerSocket s = socket;
+            if (s != null) bound.accept(port);
             while (s != null && !s.isClosed()) {
                 try {
                     Socket c = s.accept();
@@ -152,6 +155,9 @@ final class Server {
             if (done) ok(out, true);
             else if (service.searchesOnEnter()) json(out, 200, "{\"ok\":false,\"error\":\"This app has its own keyboard. Press Enter to search it.\"}");
             else json(out, 200, "{\"ok\":false,\"error\":\"No text box has focus on the TV. Apps that draw their own keyboard, like Netflix, can't be typed into: use the D-pad there.\"}");
+        } else if (post && p.equals("/api/volume")) {
+            int level = Json.integer(r.body, "level");
+            ok(out, level >= 0 && service.setVolume(level));
         } else if (get && p.equals("/api/apps")) {
             json(out, 200, Apps.json(service));
         } else if (get && p.startsWith("/api/icon/")) {

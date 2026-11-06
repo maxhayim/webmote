@@ -59,6 +59,15 @@ final class Json {
         return null;
     }
 
+    /** The whole number {@code "name"} holds, or -1 when it is missing, negative or not one. */
+    static int integer(String json, String name) {
+        int at = valueStart(json, name), end = at;
+        if (at < 0) return -1;
+        while (end < json.length() && end - at < 9 && Character.isDigit(json.charAt(end))) end++;
+        if (end == at || (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '.'))) return -1;
+        return Integer.parseInt(json.substring(at, end));
+    }
+
     static boolean isTrue(String json, String name) {
         int at = valueStart(json, name);
         return at >= 0 && json.startsWith("true", at);

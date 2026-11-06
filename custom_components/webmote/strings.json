@@ -1,0 +1,48 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Add a TV running Webmote",
+        "description": "The address and port shown on Webmote's screen on the TV, like 192.168.1.20 and 8080. TVs on the same network are usually found by themselves.",
+        "data": {
+          "host": "Address",
+          "port": "Port"
+        },
+        "data_description": {
+          "host": "The TV's IP address (Webmote refuses names).",
+          "port": "8080, unless Webmote's screen shows another."
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Add {name}?",
+        "description": "{name} runs Webmote. Next, it shows a six-digit PIN in a corner of the screen."
+      },
+      "pair": {
+        "title": "Pair with {name}",
+        "description": "Type the PIN now shown in a corner of the TV's screen (it's also on Webmote's own screen on the TV).",
+        "data": {
+          "pin": "PIN"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Pair with {name} again",
+        "description": "{name} no longer knows Home Assistant: someone pressed New PIN on the TV, or 20 newer devices paired. Next, it shows a new PIN."
+      }
+    },
+    "error": {
+      "cannot_connect": "Can't reach the TV. Check that it's on, on this network, and that Webmote's remote service is on (TV settings, Accessibility).",
+      "not_an_address": "Type the TV's IP address, like 192.168.1.20.",
+      "invalid_pin": "That PIN isn't right.",
+      "too_many_tries": "Too many tries. Wait {wait} seconds, then try again.",
+      "unknown": "The TV gave an unexpected answer."
+    },
+    "abort": {
+      "already_configured": "This TV is already added.",
+      "reauth_successful": "Paired again.",
+      "not_supported": "This Webmote is too old to add by itself: update it to 0.4.0 or newer.",
+      "update_webmote": "Update Webmote on the TV to 0.4.0 or newer, then add it again.",
+      "wrong_device": "That's a different TV from the one being paired again."
+    }
+  }
+}

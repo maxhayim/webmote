@@ -19,8 +19,8 @@ android {
         applicationId 'io.github.maxhayim.webmote'
         minSdk 28
         targetSdk 34
-        versionCode 6
-        versionName '0.3.0'
+        versionCode 7
+        versionName '0.4.0'
     }
 
     signingConfigs {
@@ -47,6 +47,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true // the version, in the network announcement
     }
 
     testOptions {

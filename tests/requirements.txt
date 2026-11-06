@@ -1,0 +1,4 @@
+pytest-homeassistant-custom-component
+# Home Assistant 2025.1 pins pycares 4; pycares 5 leaves a thread its tests reject.
+pycares<5
+zeroconf
