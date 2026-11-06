@@ -150,7 +150,7 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 <p align="center"><sub>Left: opens Webmote in HACS in your own Home Assistant. Right: once it's downloaded, adds a TV by its address (TVs on the network are offered under Discovered by themselves).</sub></p>
 
 <ol>
-  <li>Press the first button above and confirm, or in <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
+  <li>Press the first button above and confirm, or in <a href="https://hacs.xyz">HACS</a>: ⋮ → <strong>Custom repositories</strong>, add <code>https://github.com/maxhayim/webmote</code> as an <strong>Integration</strong>, then download <strong>Webmote</strong> and restart Home Assistant. Restart even if HACS doesn't ask: Home Assistant only starts looking for Webmote TVs on the network when it starts up. (Without HACS: copy <code>custom_components/webmote</code> into Home Assistant's <code>config/custom_components</code> folder and restart.)</li>
   <li>With the TV on, open <strong>Settings → Devices &amp; services</strong>. The TV is listed under <strong>Discovered</strong>; choose <strong>Add</strong>. (Not listed, for instance on another subnet: <strong>Add integration → Webmote</strong> and type the address from Webmote's screen.)</li>
   <li>The TV shows a PIN in a corner of its screen. Type it in Home Assistant.</li>
 </ol>
