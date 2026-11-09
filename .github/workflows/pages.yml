@@ -3,13 +3,9 @@ name: Bluetooth page
 # Publishes the remote page on GitHub Pages, where it works over Bluetooth (browsers allow Web Bluetooth only on
 # secure pages, and the page the TV serves over Wi-Fi is plain HTTP). Same file as in the app.
 
+# Paused: a project site under maxhayim would be served on maxhayim's own domain. Runs by hand only until the page
+# has a GitHub home of its own.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - "app/src/main/assets/**"
-      - "web/**"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
