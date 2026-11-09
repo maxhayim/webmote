@@ -15,7 +15,7 @@ import android.os.PowerManager;
 /**
  * Standby: while the screen is off, keeps the TV awake enough (the processor and Wi-Fi, not the screen) for the page
  * and Home Assistant to reach Webmote and turn the screen back on. Without it, most TVs fall asleep and drop off the
- * network, and nothing on the network can wake them. On by default; costs a few watts while the TV is off.
+ * network, and nothing on the network can wake them. On by default on TVs; costs a few watts while the TV is off.
  *
  * <p>Android's Doze ignores an app's wake locks unless the app is let off battery optimisation, which
  * {@link #exempt} tells; install.sh does that over ADB, and Webmote's screen asks where the TV has the dialog.
@@ -45,8 +45,12 @@ final class Standby {
         wifi = context.getApplicationContext().getSystemService(WifiManager.class);
     }
 
+    /**
+     * On by default on a TV. Off by default on a car head unit or tablet: kept awake after the ignition is off, a head
+     * unit could run the car's battery down.
+     */
     static boolean enabled(Context c) {
-        return prefs(c).getBoolean("standby", true);
+        return prefs(c).getBoolean("standby", Apps.isTv(c));
     }
 
     static void setEnabled(Context c, boolean on) {

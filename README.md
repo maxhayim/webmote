@@ -188,7 +188,7 @@ data:
 
 <p>If the TV's address changes, Home Assistant follows it. If someone presses <strong>New PIN</strong> on the TV, Home Assistant asks to pair again.</p>
 
-<p><strong>Turning the TV on</strong> works from Webmote 0.5.0's <strong>Standby</strong> (on by default, on Webmote's screen on the TV): while the screen is off, Webmote keeps the TV on the network, so Home Assistant and the page's power button can turn it back on. That costs a little power while the TV is off. Android's battery saving (Doze) puts apps to sleep anyway unless they're let off it; <code>install.sh</code> does that for Webmote. A TV that falls asleep off the network can only be woken by its own remote, HDMI-CEC, or its own Google Home support.</p>
+<p><strong>Turning the TV on</strong> works from Webmote 0.5.0's <strong>Standby</strong> (on by default on TVs, off on car head units and tablets so a parked car's battery isn't run down; on Webmote's screen): while the screen is off, Webmote keeps the TV on the network, so Home Assistant and the page's power button can turn it back on. That costs a little power while the TV is off. Android's battery saving (Doze) puts apps to sleep anyway unless they're let off it; <code>install.sh</code> does that for Webmote. A TV that falls asleep off the network can only be woken by its own remote, HDMI-CEC, or its own Google Home support.</p>
 
 <h2>How It Works</h2>
 
