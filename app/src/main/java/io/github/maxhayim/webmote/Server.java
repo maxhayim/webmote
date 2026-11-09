@@ -118,63 +118,85 @@ final class Server {
             Http.write(out, 200, "image/png", Icon.png(512), true);
         } else if (get && p.equals("/apple-touch-icon.png")) {
             Http.write(out, 200, "image/png", Icon.png(180), true);
-        } else if (post && p.equals("/api/pair")) {
-            Auth.Result res = auth.pair(Json.string(r.body, "pin"), SystemClock.elapsedRealtime());
-            if (res.key != null) {
-                service.hidePin();
-                json(out, 200, "{\"key\":" + Json.quote(res.key) + "}");
-            }
-            else if (res.waitMs > 0) json(out, 429, "{\"error\":\"Too many tries.\",\"wait\":" + ((res.waitMs + 999) / 1000) + "}");
-            else json(out, 403, "{\"error\":\"That PIN isn't right.\"}");
         } else if (post && p.equals("/api/pair/show")) {
             // JSON only, so another site's page can't post it without the browser asking first (and it gets no yes).
             boolean json = String.valueOf(r.header("content-type")).startsWith("application/json");
             if (json) service.showPin();
             ok(out, json);
-        } else if (p.startsWith("/api/")) {
-            if (!auth.allowed(r.header("x-webmote-key"))) {
-                json(out, 401, "{\"error\":\"Pair this device again.\"}");
-            } else {
-                api(r, get, post, out);
-            }
-        } else {
-            Http.write(out, 404, "text/plain", bytes("Not here."), false);
-        }
-    }
-
-    private void api(Http.Request r, boolean get, boolean post, OutputStream out) throws IOException {
-        String p = r.path;
-        if (get && p.equals("/api/status")) {
-            json(out, 200, service.status());
-        } else if (post && p.equals("/api/key")) {
-            String key = Json.string(r.body, "key");
-            ok(out, key != null && service.press(key));
-        } else if (post && p.equals("/api/text")) {
-            String text = Json.string(r.body, "text");
-            boolean done = Json.isTrue(r.body, "enter") ? service.enter(text) : text != null && service.type(text);
-            if (done) ok(out, true);
-            else if (service.searchesOnEnter()) json(out, 200, "{\"ok\":false,\"error\":\"This app has its own keyboard. Press Enter to search it.\"}");
-            else json(out, 200, "{\"ok\":false,\"error\":\"No text box has focus on the TV. Apps that draw their own keyboard, like Netflix, can't be typed into: use the D-pad there.\"}");
-        } else if (post && p.equals("/api/volume")) {
-            int level = Json.integer(r.body, "level");
-            ok(out, level >= 0 && service.setVolume(level));
-        } else if (post && p.equals("/api/update")) {
-            Updater.checkNow(service);
-            ok(out, true);
-        } else if (get && p.equals("/api/apps")) {
-            json(out, 200, Apps.json(service));
-        } else if (get && p.startsWith("/api/icon/")) {
+        } else if (get && p.startsWith("/api/icon/") && auth.allowed(r.header("x-webmote-key"))) {
             String pkg = p.substring("/api/icon/".length());
             if (pkg.endsWith(".png")) pkg = pkg.substring(0, pkg.length() - 4);
             byte[] png = Apps.icon(service, pkg);
             if (png == null) Http.write(out, 404, "text/plain", bytes("No icon."), false);
             else Http.write(out, 200, "image/png", png, false);
-        } else if (post && p.equals("/api/launch")) {
-            String pkg = Json.string(r.body, "pkg");
-            ok(out, pkg != null && Apps.isTvApp(service, pkg) && service.launch(pkg));
+        } else if (p.startsWith("/api/")) {
+            Reply res = call(r.method, p, r.body, auth.allowed(r.header("x-webmote-key")));
+            json(out, res.status, res.json);
         } else {
-            json(out, 404, "{\"error\":\"Unknown call.\"}");
+            Http.write(out, 404, "text/plain", bytes("Not here."), false);
         }
+    }
+
+    /** An API answer: its HTTP status and JSON. */
+    static final class Reply {
+        final int status;
+        final String json;
+
+        Reply(int status, String json) {
+            this.status = status;
+            this.json = json;
+        }
+    }
+
+    private static Reply ok(boolean ok) {
+        return new Reply(200, "{\"ok\":" + ok + "}");
+    }
+
+    /**
+     * One API call, the same over HTTP and Bluetooth (which has no icons). {@code paired}: the caller showed a paired
+     * key; without one, only pairing answers.
+     */
+    Reply call(String method, String p, String body, boolean paired) {
+        boolean get = method.equals("GET"), post = method.equals("POST");
+        if (post && p.equals("/api/pair")) {
+            Auth.Result res = auth.pair(Json.string(body, "pin"), SystemClock.elapsedRealtime());
+            if (res.key != null) {
+                service.hidePin();
+                return new Reply(200, "{\"key\":" + Json.quote(res.key) + "}");
+            }
+            if (res.waitMs > 0) return new Reply(429, "{\"error\":\"Too many tries.\",\"wait\":" + ((res.waitMs + 999) / 1000) + "}");
+            return new Reply(403, "{\"error\":\"That PIN isn't right.\"}");
+        }
+        if (!paired) return new Reply(401, "{\"error\":\"Pair this device again.\"}");
+        if (get && p.equals("/api/status")) {
+            return new Reply(200, service.status());
+        } else if (post && p.equals("/api/key")) {
+            String key = Json.string(body, "key");
+            return ok(key != null && service.press(key));
+        } else if (post && p.equals("/api/text")) {
+            String text = Json.string(body, "text");
+            boolean done = Json.isTrue(body, "enter") ? service.enter(text) : text != null && service.type(text);
+            if (done) return ok(true);
+            if (service.searchesOnEnter()) return new Reply(200, "{\"ok\":false,\"error\":\"This app has its own keyboard. Press Enter to search it.\"}");
+            return new Reply(200, "{\"ok\":false,\"error\":\"No text box has focus on the TV. Apps that draw their own keyboard, like Netflix, can't be typed into: use the D-pad there.\"}");
+        } else if (post && p.equals("/api/volume")) {
+            int level = Json.integer(body, "level");
+            return ok(level >= 0 && service.setVolume(level));
+        } else if (post && p.equals("/api/update")) {
+            Updater.checkNow(service);
+            return ok(true);
+        } else if (get && p.equals("/api/apps")) {
+            return new Reply(200, Apps.json(service));
+        } else if (post && p.equals("/api/launch")) {
+            String pkg = Json.string(body, "pkg");
+            return ok(pkg != null && Apps.isTvApp(service, pkg) && service.launch(pkg));
+        }
+        return new Reply(404, "{\"error\":\"Unknown call.\"}");
+    }
+
+    /** Whether {@code key} is a paired key. */
+    boolean paired(String key) {
+        return auth.allowed(key);
     }
 
     private static void ok(OutputStream out, boolean ok) throws IOException {

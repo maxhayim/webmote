@@ -52,6 +52,7 @@ public class RemoteService extends AccessibilityService {
     private PinCard pinCard;
     private Nsd nsd;
     private Standby standby;
+    private Ble ble;
     private volatile String frontPackage;
 
     static synchronized Auth auth(Context c) {
@@ -82,7 +83,20 @@ public class RemoteService extends AccessibilityService {
         server.start(PORT, port -> nsd.start(tvName(), port, deviceId(this), kind()));
         standby = new Standby(this);
         standby.start();
+        ble = new Ble(this, server);
+        ble.start();
         Updater.schedule(this);
+    }
+
+    /** The Bluetooth remote switched on or off on Webmote's screen, or its permissions granted. */
+    void bluetoothChanged() {
+        ble.stop(false);
+        ble.start();
+    }
+
+    /** The Bluetooth remote's state: see {@link Ble#state()}. */
+    String bluetooth() {
+        return ble == null ? "off" : ble.state();
     }
 
     /** Standby switched on or off on Webmote's screen. */
@@ -105,6 +119,7 @@ public class RemoteService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        if (ble != null) ble.stop(true);
         if (standby != null) standby.stop();
         if (nsd != null) nsd.stop();
         if (server != null) server.stop();
@@ -407,6 +422,7 @@ public class RemoteService extends AccessibilityService {
                 + ",\"version\":" + Json.quote(BuildConfig.VERSION_NAME)
                 + ",\"screen\":" + isScreenOn()
                 + ",\"standby\":" + Standby.enabled(this)
+                + ",\"bluetooth\":" + Json.quote(bluetooth())
                 + ",\"updates\":" + Json.quote(Updater.mode(this))
                 + ",\"latest\":" + Json.quote(Updater.latest(this))
                 + ",\"update\":" + Json.quote(Updater.status(this))

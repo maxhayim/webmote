@@ -52,6 +52,7 @@
   <li><strong>Google-TV-style remote</strong>: D-pad with OK, Back, Home, volume up/down, mute, play/pause, and TV settings</li>
   <li><strong>Car head units and tablets</strong>: a touch layout with previous, play/pause and next in place of the D-pad, recent apps, and the device's own app drawer; works over a hotspot with no internet</li>
   <li><strong>Home Assistant</strong>: an integration (install with HACS) that finds the TVs on the network, pairs with the PIN, and adds each as a media player (on/off, volume, mute, play/pause, tracks, apps as sources), a remote (every button, typing and searching), a button for each remote key, and Webmote's updates</li>
+  <li><strong>Bluetooth, as a second way in</strong>: with no shared Wi-Fi or hotspot (in a car, or a TV on another network), open the page on GitHub Pages in Chrome and connect over Bluetooth. Same remote, same PIN. See <a href="#bluetooth">Over Bluetooth</a></li>
   <li><strong>QR code</strong>: Webmote's screen shows one for its address, so a phone opens the remote by pointing its camera at it</li>
   <li><strong>Turn off and on</strong>: hold the power button for a second to turn the TV off, so a stray tap doesn't; tap it to turn the TV back on (Standby keeps Webmote on the network while the TV is off)</li>
   <li><strong>Updates itself</strong> from this repository's releases, once a day. On Webmote's screen, <strong>Updates</strong> is Automatic, Notify only (checks, and Home Assistant shows the update, but installs only when you ask) or Off (never checks by itself). Silent on Android 12 and newer when installed with <code>install.sh</code>; elsewhere the TV asks once, only when you open Webmote's screen or ask for the update</li>
@@ -70,7 +71,7 @@
 
 <ul>
   <li>An Android TV or Google TV device, or an Android car head unit or tablet, on <strong>Android 9 or newer</strong> (on Android 13 and newer the D-pad works everywhere; see Known Limitations for 9 to 12)</li>
-  <li>A phone, tablet or computer with a modern browser, <strong>on the same network</strong> as the TV (in a car: the same hotspot)</li>
+  <li>A phone, tablet or computer with a modern browser, <strong>on the same network</strong> as the TV (in a car: the same hotspot); or, over Bluetooth, Chrome on Android or a computer, or the Bluefy browser on iPhone</li>
   <li>To install: a computer with <a href="https://developer.android.com/tools/releases/platform-tools">ADB</a> and Developer options → Network debugging on the TV, or any sideloading app on the TV</li>
 </ul>
 
@@ -130,9 +131,23 @@ TV_HOST=&lt;tv ip&gt; ./install.sh
 
 <p>Webmote shows the hotspot's address even when the head unit's mobile data is its active network. A hotspot's address can change between drives, so scan the code again if the saved page can't reach the head unit. <strong>It's for passengers:</strong> the driver keeps their eyes on the road.</p>
 
+<p>No hotspot? Use <a href="#bluetooth">Bluetooth</a> instead.</p>
+
 <p>To trim a head unit's preinstalled apps first, or try another launcher on it, see <a href="https://github.com/maxhayim/CleanYourHeadUnit">CleanYourHeadUnit</a>.</p>
 
 <p>Cars with Android built in from the factory (Android Automotive, such as Polestar, Volvo and some GM models) don't allow apps like this, so Webmote can't run there.</p>
+
+<h3 id="bluetooth">Over Bluetooth</h3>
+
+<p>A second way in, for a TV or car screen your phone can't reach over Wi-Fi. Webmote's own page is plain HTTP, where browsers don't allow Bluetooth, so this uses the same page from GitHub Pages:</p>
+
+<ol>
+  <li>On the TV or head unit, open <strong>Webmote</strong> and switch on <strong>Bluetooth remote</strong> (allow it if asked). It stays off until you do.</li>
+  <li>On the phone, open <a href="https://maxhayim.github.io/webmote/">maxhayim.github.io/webmote</a> in <strong>Chrome</strong> (Android or a computer) or the free <strong>Bluefy</strong> browser (iPhone and iPad: Safari has no Web Bluetooth), and tap <strong>Connect</strong>.</li>
+  <li>Pick the TV or head unit from the list, then type the PIN it shows. That browser stays paired with it; next time, tap Connect and pick it again.</li>
+</ol>
+
+<p>Everything works as over Wi-Fi except the apps' pictures, which are left out to keep it quick. It reaches about as far as a Bluetooth speaker. Many aftermarket head units keep their Bluetooth for calls and music, where apps can't use it: then Webmote's screen says <strong>Can't</strong> next to Bluetooth remote, and the hotspot is the way in.</p>
 
 <h3 id="home-assistant">Home Assistant</h3>
 
@@ -221,7 +236,7 @@ data:
 <p>Anything that can press a TV's keys can open apps and change settings, so Webmote is locked down by default:</p>
 
 <ul>
-  <li>Only devices on your home network (private addresses, and VPN ranges like Tailscale's) can connect at all.</li>
+  <li>Only devices on your home network (private addresses, and VPN ranges like Tailscale's) can connect at all. Bluetooth, when switched on, reaches only as far as Bluetooth does, and asks for the same paired key.</li>
   <li>Every control call needs a key that the TV gives out only for the PIN on its screen. After 5 wrong PINs, pairing locks for 30 seconds, doubling up to 5 minutes. A browser on the pairing page can ask the TV to show the PIN in a corner of its screen for a minute; that shows it to the room, not to the browser.</li>
   <li>The TV stores only hashes of the keys. Pages on other websites can't use your paired browser to control the TV (no CORS, DNS-rebinding protection).</li>
   <li>No accounts, no cloud, no analytics: nothing about you or your TV leaves your network. The only call out is the daily look at GitHub for a newer Webmote, which you can switch off (Updates: Off).</li>
@@ -232,7 +247,8 @@ data:
 <h2>Known Limitations</h2>
 
 <ul>
-  <li><strong>It can't turn the TV on.</strong> A TV in standby is off the network, so nothing on Wi-Fi can reach Webmote. Use the TV's remote, HDMI-CEC from another device, or a voice assistant to turn it on.</li>
+  <li><strong>Turning the TV on needs Standby.</strong> A TV asleep without it is off the network, so nothing on Wi-Fi can reach Webmote; use the TV's remote, HDMI-CEC from another device, or a voice assistant then.</li>
+  <li><strong>Bluetooth needs Chrome or Bluefy</strong> (Web Bluetooth): not Safari or Firefox. Chrome asks you to pick the device each time the page opens.</li>
   <li><strong>The D-pad on Android 9 to 12 works in most apps, not all.</strong> The D-pad actions for accessibility services arrived in Android 13. Before that, Webmote moves the TV's focus itself and OK clicks what has it. That follows apps built from standard Android views (home screens, settings, most app menus), but not apps that draw their own screen, such as some games and video players.</li>
   <li><strong>Enter on Android 9 and 10 clicks the app's search button.</strong> Those versions have no Enter action for accessibility services, so Webmote clicks the search, send or go button the app shows instead; an app without one won't search on Enter. Some Android 9 and 10 TVs also route volume through their own service; Webmote tries each way of changing it until the level moves.</li>
   <li><strong>Android 8 and older aren't supported.</strong></li>

@@ -155,6 +155,32 @@ public class MainActivity extends Activity {
             power.setDetail("On, but Android may still put Webmote to sleep while the TV is off: run install.sh again from a computer (see the README).");
         }
 
+        boolean bt = Ble.enabled(this);
+        String btState = svc != null && bt ? svc.bluetooth() : Ble.capability(this);
+        Row blue = add(new Row(this, "Bluetooth remote", BT_DETAIL, () -> {
+            boolean on = !Ble.enabled(this);
+            if (on && !Ble.permitted(this)) {
+                requestPermissions(Ble.permissions(), 1);
+                return;
+            }
+            Ble.setEnabled(this, on);
+            build();
+        }));
+        if (!bt) {
+            blue.setValue("Off");
+            if (btState.equals("unsupported")) blue.setDetail("This device's Bluetooth can't host the remote: it's kept for calls and music, or too old.");
+        } else {
+            switch (btState) {
+                case "on": blue.setValue("On"); break;
+                case "bluetooth off": blue.setValue("On"); blue.setDetail("Waiting: turn on Bluetooth in the device's settings."); break;
+                case "no permission": blue.setValue("On"); blue.setDetail("Waiting for permission: press OK to allow it."); break;
+                case "unsupported": blue.setValue("Can't"); blue.setDetail("This device's Bluetooth can't host the remote: it's kept for calls and music, or too old."); break;
+                case "failed": blue.setValue("Failed"); blue.setDetail("Bluetooth wouldn't start the remote. Turn Bluetooth off and on in the device's settings."); break;
+                case "supported": blue.setValue("On"); blue.setDetail("Starts with the remote service."); break;
+                default: blue.setValue("Starting…"); main.postDelayed(this::build, 1500);
+            }
+        }
+
         String mode = Updater.mode(this);
         Row updates = add(new Row(this, "Updates", modeDetail(mode), () -> {
             String m = Updater.mode(this);
@@ -171,6 +197,17 @@ public class MainActivity extends Activity {
 
         int keep = focused >= 0 && focused < rows.getChildCount() ? focused : 0;
         rows.getChildAt(keep).requestFocus();
+    }
+
+    private static final String BT_DETAIL =
+            "For a phone that isn't on this Wi-Fi: open maxhayim.github.io/webmote in Chrome and connect.";
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (Ble.permitted(this)) Ble.setEnabled(this, true);
+        else status.setText("Bluetooth needs that permission. Press OK on Bluetooth remote to ask again.");
+        build();
     }
 
     private static String modeDetail(String mode) {

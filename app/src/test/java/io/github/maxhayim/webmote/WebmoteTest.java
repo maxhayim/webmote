@@ -196,4 +196,24 @@ public class WebmoteTest {
         }
         assertEquals(-1, Json.integer(null, "level"));
     }
+
+    @Test
+    public void splitsBluetoothMessagesIntoPieces() throws IOException {
+        byte[] msg = new byte[100];
+        for (int i = 0; i < msg.length; i++) msg[i] = (byte) i;
+        for (int mtu : new int[] {23, 50, 185, 517}) {
+            java.util.List<byte[]> pieces = Ble.pieces(msg, mtu);
+            java.io.ByteArrayOutputStream joined = new java.io.ByteArrayOutputStream();
+            for (int i = 0; i < pieces.size(); i++) {
+                byte[] p = pieces.get(i);
+                assertTrue("fits MTU " + mtu, p.length <= mtu - 3);
+                assertEquals(i == pieces.size() - 1 ? 1 : 0, p[0]);
+                joined.write(p, 1, p.length - 1);
+            }
+            assertTrue(java.util.Arrays.equals(msg, joined.toByteArray()));
+        }
+        assertEquals(6, Ble.pieces(msg, 23).size()); // 19 bytes each
+        assertEquals(1, Ble.pieces(msg, 517).size());
+        assertEquals(1, Ble.pieces(new byte[] {'{', '}'}, 23).size());
+    }
 }

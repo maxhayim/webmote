@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="%TV% - Webmote">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root {
   --bg: #0e1016; --surface: #1a1e28; --surface-2: #232836; --press: #2e3446;
@@ -143,6 +143,13 @@ input:focus { border-color: var(--accent); }
 <body>
 <div class="app">
 
+  <section id="connect" class="pair hidden">
+    <h1>Webmote</h1>
+    <p id="connectText">Connects to a TV or car screen over Bluetooth, no Wi-Fi needed. On it, open Webmote and switch on <b>Bluetooth remote</b> first.</p>
+    <div id="connectNote" class="note" role="status"></div>
+    <button id="connectBtn" class="primary">Connect</button>
+  </section>
+
   <section id="pair" class="pair hidden">
     <h1>Webmote</h1>
     <p id="pairText">The TV is showing its PIN in a corner now. Type it here; this browser stays paired.</p>
@@ -236,7 +243,10 @@ input:focus { border-color: var(--accent); }
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const KEY = "webmote-key";
+  // Opened from GitHub Pages (https), it works over Bluetooth: browsers allow Web Bluetooth only on secure pages, and
+  // the page the TV serves over Wi-Fi is plain HTTP.
+  const BT = location.protocol === "https:";
+  let KEY = "webmote-key";
   // "tv", or "touch" for a car head unit or tablet; the server fills it in (a raw "%KIND%" when the page is opened as a file).
   const touch = document.documentElement.dataset.kind === "touch";
   const THE = touch ? "the screen" : "the TV";
@@ -257,12 +267,86 @@ input:focus { border-color: var(--accent); }
   }
 
   async function api(path, body) {
-    const opts = { headers: { "X-Webmote-Key": key || "" } };
-    if (body !== undefined) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
-    const r = await fetch(path, opts);
+    let r;
+    if (BT) {
+      const m = await btCall(body === undefined ? "GET" : "POST", path, body);
+      r = { status: m.s, ok: m.s === 200, json: async () => m.b };
+    } else {
+      const opts = { headers: { "X-Webmote-Key": key || "" } };
+      if (body !== undefined) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+      r = await fetch(path, opts);
+    }
     if (r.status === 401) { unpair(); throw new Error("unpaired"); }
     return r;
   }
+
+  // ----- Bluetooth: the same API as JSON messages, in pieces of 19 bytes after a byte that's 1 on the last piece.
+  const SVC = "4e7a0001-8f1d-4b6e-a3c2-5765626d6f74", RX = "4e7a0002-8f1d-4b6e-a3c2-5765626d6f74",
+    TX = "4e7a0003-8f1d-4b6e-a3c2-5765626d6f74";
+  const enc = new TextEncoder(), dec = new TextDecoder();
+  let dev = null, rx = null, chain = Promise.resolve(), nextId = 1, parts = [];
+  const waiting = new Map();
+  function onPiece(e) {
+    const v = new Uint8Array(e.target.value.buffer, e.target.value.byteOffset, e.target.value.byteLength);
+    parts.push(v.slice(1));
+    if (v[0] !== 1) return;
+    const all = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    let at = 0; for (const p of parts) { all.set(p, at); at += p.length; }
+    parts = [];
+    let m; try { m = JSON.parse(dec.decode(all)); } catch (err) { return; }
+    const w = waiting.get(m.i); if (w) { waiting.delete(m.i); w(m); }
+  }
+  function btCall(method, path, body, k) {
+    const run = async () => {
+      if (!rx) throw new Error("offline");
+      const i = nextId++, msg = { i, m: method, p: path };
+      if (body !== undefined) msg.b = body;
+      if (k) msg.k = k;
+      const bytes = enc.encode(JSON.stringify(msg));
+      const answer = new Promise((res, rej) => {
+        waiting.set(i, res);
+        setTimeout(() => { if (waiting.delete(i)) rej(new Error("timeout")); }, 8000);
+      });
+      try {
+        for (let at = 0; at < bytes.length; at += 19) {
+          const piece = bytes.slice(at, at + 19), out = new Uint8Array(piece.length + 1);
+          out[0] = at + 19 >= bytes.length ? 1 : 0; out.set(piece, 1);
+          await rx.writeValueWithResponse(out);
+        }
+      } catch (err) { waiting.delete(i); throw err; }
+      return answer;
+    };
+    const p = chain.then(run, run); chain = p.catch(() => {}); return p;
+  }
+  async function link() {
+    const server = await dev.gatt.connect();
+    const svc = await server.getPrimaryService(SVC);
+    const r = await svc.getCharacteristic(RX), t = await svc.getCharacteristic(TX);
+    await t.startNotifications();
+    t.addEventListener("characteristicvaluechanged", onPiece);
+    parts = []; rx = r;
+    KEY = "webmote-bt-" + dev.id;
+    try { key = localStorage.getItem(KEY); } catch (e) { key = null; }
+    show($("connect"), false);
+    if (key && (await btCall("POST", "/auth", undefined, key)).s === 200) start(); else unpair();
+  }
+  function relink() {
+    rx = null; setOnline(false);
+    if (!dev) return;
+    setTimeout(() => { if (!rx) link().catch(relink); }, 2000);
+  }
+  $("connectBtn").addEventListener("click", async () => {
+    $("connectNote").textContent = "";
+    try {
+      dev = await navigator.bluetooth.requestDevice({ filters: [{ services: [SVC] }] });
+      dev.addEventListener("gattserverdisconnected", relink);
+      $("connectNote").textContent = "Connecting…";
+      await link();
+      $("connectNote").textContent = "";
+    } catch (e) {
+      $("connectNote").textContent = e.name === "NotFoundError" ? "" : "Couldn't connect. Is Bluetooth remote on, and the screen nearby?";
+    }
+  });
 
   // ----- Pairing
   function unpair() {
@@ -277,14 +361,16 @@ input:focus { border-color: var(--accent); }
   });
   $("pairBtn").addEventListener("click", pair);
   function showPin() {
+    if (BT) { btCall("POST", "/api/pair/show", {}).catch(() => {}); return; }
     fetch("/api/pair/show", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
   }
   $("showPin").addEventListener("click", () => { showPin(); $("pin").focus(); });
   async function pair() {
     $("pairBtn").disabled = true; $("pairNote").textContent = "Pairing…";
     try {
-      const r = await fetch("/api/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: $("pin").value }) });
-      const j = await r.json();
+      const pin = $("pin").value;
+      const j = BT ? (await btCall("POST", "/api/pair", { pin })).b
+        : await (await fetch("/api/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin }) })).json();
       if (j.key) {
         key = j.key; try { localStorage.setItem(KEY, key); } catch (e) {}
         $("pairNote").textContent = ""; start();
@@ -293,7 +379,7 @@ input:focus { border-color: var(--accent); }
         $("pin").value = ""; $("pin").focus();
       }
     } catch (e) {
-      $("pairNote").textContent = `Can't reach ${THE}. Is it on, and on this Wi-Fi or hotspot?`;
+      $("pairNote").textContent = BT ? "Lost the Bluetooth connection. Reconnecting…" : `Can't reach ${THE}. Is it on, and on this Wi-Fi or hotspot?`;
       $("pairBtn").disabled = false;
     }
   }
@@ -362,11 +448,12 @@ input:focus { border-color: var(--accent); }
     if (!on) $("appName").textContent = `Can't reach ${THE}`;
   }
   async function poll() {
-    if (!key || document.hidden) return;
+    if (!key || document.hidden || (BT && !rx)) return;
     try {
       const s = await (await api("/api/status")).json();
       setOnline(true);
       screenOn = s.screen !== false; standby = !!s.standby;
+      if (BT) document.documentElement.dataset.kind = s.kind === "touch" ? "touch" : "tv";
       $("power").title = screenOn ? "Hold to turn off" : "Turn on";
       $("tvName").textContent = s.tv || "TV";
       document.title = `${s.tv || "TV"} - Webmote`; // follows a rename without a reload
@@ -404,7 +491,7 @@ input:focus { border-color: var(--accent); }
           closeSheets(); if (navigator.vibrate) navigator.vibrate(8);
           await api("/api/launch", { pkg: a.pkg }); setTimeout(poll, 800);
         });
-        api("/api/icon/" + encodeURIComponent(a.pkg)).then(r => r.ok ? r.blob() : null)
+        if (!BT) api("/api/icon/" + encodeURIComponent(a.pkg)).then(r => r.ok ? r.blob() : null)
           .then(bl => { if (bl) art.style.backgroundImage = `url(${URL.createObjectURL(bl)})`; }).catch(() => {});
       }
       appsLoaded = true;
@@ -443,7 +530,13 @@ input:focus { border-color: var(--accent); }
   });
 
   function start() { show($("pair"), false); show($("remote"), true); poll(); }
-  if (key) start(); else unpair();
+  if (BT) {
+    show($("connect"), true);
+    if (!navigator.bluetooth) {
+      $("connectBtn").disabled = true;
+      $("connectNote").textContent = "This browser can't use Bluetooth from a web page. Use Chrome on Android, or the Bluefy browser on iPhone.";
+    }
+  } else if (key) start(); else unpair();
 })();
 </script>
 </body>

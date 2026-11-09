@@ -43,6 +43,10 @@ Responsible disclosure is required.
   screen only when the page types, to find the focused text box. It doesn't filter keys, perform gestures or log
   anything. Beyond the network and its accessibility service, the app asks only to keep the TV awake while the
   screen is off (Standby, which can be switched off) and to install its own updates.
+- **Bluetooth is off until switched on.** The Bluetooth remote (Webmote's screen) answers the same API with the same
+  pairing and keys, to anything within Bluetooth range. Like HTTP on the home network, the link isn't encrypted:
+  someone nearby with a Bluetooth sniffer could read a key as it goes by. Switch it off where that matters, and press
+  **New PIN** if in doubt. It doesn't scan, and asks for no location permission.
 - **Signed updates.** Webmote updates itself only from this repository's latest GitHub release, over HTTPS, and only
   with an APK that is Webmote, newer, and signed with the same key as the installed one (Android enforces the key
   too). On Webmote's screen, Updates can be set to Notify only (checks, installs only when asked) or Off (never checks by itself); the page's API can ask for an update but can't

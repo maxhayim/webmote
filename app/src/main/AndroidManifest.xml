@@ -8,6 +8,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- This TV's address, to show on its screen. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The Bluetooth remote (off until switched on on Webmote's screen): advertises and takes connections from the page
+         on GitHub Pages. No location, no scanning. -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- Standby: stays on the network while the screen is off, to turn it back on; asks Doze to let it. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />

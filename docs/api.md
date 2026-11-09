@@ -59,6 +59,20 @@ Key names:
 | `on` | Turns the screen back on: works while Webmote's standby keeps it on the network (0.5.0) |
 | `power` | `off` while the screen is on, `on` while it's off (0.5.0) |
 
+## Over Bluetooth
+
+With **Bluetooth remote** on (Webmote's screen), Webmote also takes the same API over Bluetooth Low Energy, for the page
+on GitHub Pages (Web Bluetooth). Service `4e7a0001-8f1d-4b6e-a3c2-5765626d6f74`; write requests to
+`4e7a0002-…` and get answers as notifications on `4e7a0003-…` (same suffix).
+
+- A message is JSON, cut into pieces that fit a Bluetooth packet; each piece starts with one byte, `1` on the message's
+  last piece and `0` before it.
+- Request: `{"i": 1, "m": "GET", "p": "/api/status"}`, with `"b": {…}` for a body. Answer: `{"i": 1, "s": 200, "b": {…}}`.
+- First, sign the connection in with `{"i": 1, "m": "POST", "p": "/auth", "k": "<key>"}`. Until then only
+  `/api/pair` and `/api/pair/show` answer; a pairing over Bluetooth signs the connection in too.
+- No `/api/icon`. The status adds `"bluetooth"`: `"on"`, `"off"`, `"bluetooth off"`, `"no permission"`,
+  `"unsupported"` (the device's Bluetooth can't host it) or `"failed"`.
+
 ## Finding TVs on the network
 
 Webmote announces itself over mDNS (Bonjour) as `_webmote._tcp`, named after the TV, on the port it serves. Its TXT

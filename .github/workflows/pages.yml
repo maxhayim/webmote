@@ -1,0 +1,59 @@
+name: Bluetooth page
+
+# Publishes the remote page on GitHub Pages, where it works over Bluetooth (browsers allow Web Bluetooth only on
+# secure pages, and the page the TV serves over Wi-Fi is plain HTTP). Same file as in the app.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "app/src/main/assets/**"
+      - "assets/logo.png"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fill in the page
+        run: |
+          mkdir -p _site
+          # The TV fills these in with its name and kind; here the page takes them from the device it connects to.
+          sed -e 's/%TV% - Webmote/Webmote/g' -e 's/%TV%/Webmote/g' -e 's/%KIND%/tv/g' \
+            app/src/main/assets/index.html > _site/index.html
+          sed -e 's/%TV% - Webmote/Webmote/g' -e 's/%TV%/Webmote/g' \
+            app/src/main/assets/manifest.webmanifest > _site/manifest.webmanifest
+          if grep -q '%TV%\|%KIND%' _site/index.html _site/manifest.webmanifest; then echo "unfilled placeholder" >&2; exit 1; fi
+          cp assets/logo.png _site/icon-512.png
+          convert assets/logo.png -resize 192x192 _site/icon-192.png
+          convert assets/logo.png -resize 180x180 -background '#0e1016' -flatten _site/apple-touch-icon.png
+          touch _site/.nojekyll
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    name: Publish on GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
