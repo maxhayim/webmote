@@ -23,7 +23,8 @@ async def async_setup_entry(
 
 
 class WebmoteMediaPlayer(WebmoteEntity, MediaPlayerEntity):
-    # Webmote can put the TV in standby but can't wake it: nothing on the TV is listening then.
+    _attr_name = None  # the TV's own name
+    # Turning on needs Webmote's standby (0.5.0 and newer): a TV asleep without it is off the network.
     _attr_supported_features = (
         MediaPlayerEntityFeature.VOLUME_SET
         | MediaPlayerEntityFeature.VOLUME_STEP
@@ -34,6 +35,7 @@ class WebmoteMediaPlayer(WebmoteEntity, MediaPlayerEntity):
         | MediaPlayerEntityFeature.PREVIOUS_TRACK
         | MediaPlayerEntityFeature.SELECT_SOURCE
         | MediaPlayerEntityFeature.TURN_OFF
+        | MediaPlayerEntityFeature.TURN_ON
     )
 
     def __init__(self, coordinator) -> None:
@@ -71,6 +73,9 @@ class WebmoteMediaPlayer(WebmoteEntity, MediaPlayerEntity):
     @property
     def app_name(self) -> str | None:
         return self.source
+
+    async def async_turn_on(self) -> None:
+        await self.turn_on()
 
     async def async_turn_off(self) -> None:
         await self.call("turning off", self.coordinator.client.press("off"))

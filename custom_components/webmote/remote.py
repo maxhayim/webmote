@@ -32,6 +32,7 @@ async def async_setup_entry(
 
 
 class WebmoteRemote(WebmoteEntity, RemoteEntity):
+    _attr_name = None  # the TV's own name
     _attr_supported_features = RemoteEntityFeature.ACTIVITY
 
     @property
@@ -43,14 +44,16 @@ class WebmoteRemote(WebmoteEntity, RemoteEntity):
         return [a.label for a in self.coordinator.data.apps] if self.coordinator.data else []
 
     async def async_turn_on(self, activity: str | None = None, **kwargs: Any) -> None:
-        # Webmote can't wake a sleeping TV; with an activity, it opens that app.
+        # With an activity, it opens that app (waking the TV first).
+        if activity and not self.is_on:
+            await self.turn_on()
         if activity:
             pkg = self.app_named(activity)
             if pkg is None:
                 raise ServiceValidationError(f"{self.coordinator.config_entry.title} has no app called {activity}")
             await self.call(f"opening {activity}", self.coordinator.client.launch(pkg))
         elif not self.is_on:
-            raise ServiceValidationError("Webmote can't turn a TV on; use the TV's own remote or HDMI-CEC")
+            await self.turn_on()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self.call("turning off", self.coordinator.client.press("off"))

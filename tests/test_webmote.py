@@ -138,6 +138,11 @@ async def test_media_player(hass: HomeAssistant, tv) -> None:
     await hass.services.async_call("media_player", "turn_off", {"entity_id": MP}, blocking=True)
     await refresh(hass)
     assert hass.states.get(MP).state == "off"
+    # In standby the TV is still on the network, so it can be turned back on.
+    await hass.services.async_call("media_player", "turn_on", {"entity_id": MP}, blocking=True)
+    await refresh(hass)
+    assert hass.states.get(MP).state == "on"
+    assert tv.keys[-2:] == ["off", "on"]
 
 
 async def test_remote(hass: HomeAssistant, tv) -> None:
@@ -170,6 +175,9 @@ async def test_tv_asleep_reads_as_off(hass: HomeAssistant, tv) -> None:
     await refresh(hass)
     assert hass.states.get(MP).state == "off"
     assert hass.states.get(REMOTE).state == "off"
+    with pytest.raises(Exception, match="can't be reached to turn it on"):
+        await hass.services.async_call("media_player", "turn_on", {"entity_id": MP}, blocking=True)
+    assert hass.states.get("update.living_room_tv_webmote_app").state == "off"  # still knows its version
     entry.runtime_data.client.port = tv.port
     await refresh(hass)
     assert hass.states.get(MP).state == "on"
@@ -186,3 +194,46 @@ async def test_new_pin_asks_to_pair_again(hass: HomeAssistant, tv) -> None:
     r = await hass.config_entries.flow.async_configure(r["flow_id"], {CONF_PIN: PIN})
     assert r["type"] is FlowResultType.ABORT and r["reason"] == "reauth_successful"
     assert entry.data[CONF_KEY] == KEY
+
+
+async def test_buttons(hass: HomeAssistant, tv) -> None:
+    await add(hass, tv)
+    for name in ("up", "down", "left", "right", "ok", "back", "home", "recent_apps", "settings"):
+        assert hass.states.get(f"button.living_room_tv_{name}") is not None, name
+    await hass.services.async_call("button", "press", {"entity_id": "button.living_room_tv_ok"}, blocking=True)
+    await hass.services.async_call("button", "press", {"entity_id": "button.living_room_tv_recent_apps"}, blocking=True)
+    assert tv.keys == ["ok", "recents"]
+
+
+async def test_head_unit_has_no_d_pad(hass: HomeAssistant, tv) -> None:
+    tv.status["kind"] = "touch"
+    await add(hass, tv)
+    assert hass.states.get("button.living_room_tv_up") is None
+    assert hass.states.get("button.living_room_tv_home") is not None
+
+
+async def test_update(hass: HomeAssistant, tv) -> None:
+    tv.status["latest"] = "0.6.0"
+    tv.status["update"] = "Version 0.6.0 is available"
+    await add(hass, tv)
+    u = "update.living_room_tv_webmote_app"
+    s = hass.states.get(u)
+    assert s.state == "on"
+    assert s.attributes["installed_version"] == "0.5.0"
+    assert s.attributes["latest_version"] == "0.6.0"
+    assert s.attributes["release_url"].endswith("/releases/tag/v0.6.0")
+    await hass.services.async_call("update", "install", {"entity_id": u}, blocking=True)
+    assert tv.updates == 1
+    await refresh(hass)
+    assert hass.states.get(u).attributes["in_progress"] is True
+
+
+async def test_old_webmote_knows_of_no_update(hass: HomeAssistant, tv) -> None:
+    """Webmote before 0.5.0 doesn't check GitHub, so it reads as up to date."""
+    for k in ("standby", "latest", "update"):
+        tv.status.pop(k)
+    tv.status["version"] = "0.4.0"
+    await add(hass, tv)
+    u = "update.living_room_tv_webmote_app"
+    assert hass.states.get(u).state == "off"
+    assert hass.states.get(u).attributes["installed_version"] == "0.4.0"

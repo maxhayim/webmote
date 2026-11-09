@@ -40,6 +40,9 @@ class Status:
     kind: str
     version: str | None
     screen: bool
+    standby: bool
+    latest: str
+    update: str
     app: str
     pkg: str
     volume: int
@@ -54,6 +57,9 @@ class Status:
             kind=str(j.get("kind") or "tv"),
             version=j.get("version"),
             screen=bool(j.get("screen", True)),
+            standby=bool(j.get("standby")),
+            latest=str(j.get("latest") or ""),
+            update=str(j.get("update") or ""),
             app=str(j.get("app") or ""),
             pkg=str(j.get("pkg") or ""),
             volume=int(j.get("volume") or 0),
@@ -131,6 +137,10 @@ class WebmoteClient:
 
     async def launch(self, pkg: str) -> bool:
         return await self._ok("/api/launch", {"pkg": pkg})
+
+    async def update(self) -> bool:
+        """Has the TV check GitHub for a newer Webmote and install it (Webmote 0.5.0 and newer)."""
+        return await self._ok("/api/update", {})
 
     async def text(self, text: str, enter: bool = False) -> bool:
         return await self._ok("/api/text", {"text": text, "enter": enter})

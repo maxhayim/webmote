@@ -51,9 +51,10 @@
 <ul>
   <li><strong>Google-TV-style remote</strong>: D-pad with OK, Back, Home, volume up/down, mute, play/pause, and TV settings</li>
   <li><strong>Car head units and tablets</strong>: a touch layout with previous, play/pause and next in place of the D-pad, recent apps, and the device's own app drawer; works over a hotspot with no internet</li>
-  <li><strong>Home Assistant</strong>: an integration (install with HACS) that finds the TVs on the network, pairs with the PIN, and adds each as a media player (on/off, volume, mute, play/pause, tracks, apps as sources) and a remote (every button, typing and searching)</li>
+  <li><strong>Home Assistant</strong>: an integration (install with HACS) that finds the TVs on the network, pairs with the PIN, and adds each as a media player (on/off, volume, mute, play/pause, tracks, apps as sources), a remote (every button, typing and searching), a button for each remote key, and Webmote's updates</li>
   <li><strong>QR code</strong>: Webmote's screen shows one for its address, so a phone opens the remote by pointing its camera at it</li>
-  <li><strong>Turn off</strong>: hold the power button for a second, so a stray tap doesn't</li>
+  <li><strong>Turn off and on</strong>: hold the power button for a second to turn the TV off, so a stray tap doesn't; tap it to turn the TV back on (Standby keeps Webmote on the network while the TV is off)</li>
+  <li><strong>Updates itself</strong> from this repository's releases, once a day; switch it off on Webmote's screen. Silent on Android 12 and newer when installed with <code>install.sh</code>; elsewhere the TV asks once, only when you open Webmote's screen or ask for the update</li>
   <li><strong>Apps sheet</strong>: every app on the TV with its banner; tap one to open it</li>
   <li><strong>Keyboard</strong>: type on your phone and the text appears in the TV's focused search or text box, then Enter to search</li>
   <li><strong>Now playing</strong>: the TV's name, the app in front, and the volume, kept up to date</li>
@@ -81,7 +82,7 @@
   <li>Download <code>Webmote-x.y.z.apk</code> from the <a href="../../releases/latest">latest release</a>.</li>
   <li>Install it and switch on its remote service:
 <pre>
-TV_HOST=&lt;tv ip&gt; APK=Webmote-0.4.1.apk ./install.sh
+TV_HOST=&lt;tv ip&gt; APK=Webmote-0.5.0.apk ./install.sh
 </pre>
   This installs the APK with <code>adb</code>, adds Webmote's remote service to the accessibility services already on (keeping theirs), and opens Webmote on the TV.</li>
 </ol>
@@ -168,11 +169,13 @@ mkdir -p /config/custom_components &amp;&amp; curl -fsSL https://github.com/maxh
 
 <p>Installed this way, Home Assistant doesn't tell you about updates: watch this repository's releases, and run the line again (or copy the new folder) when there's a new one.</p>
 
-<p>Each TV becomes a device with two entities:</p>
+<p>Each TV becomes a device with:</p>
 
 <ul>
-  <li><strong>Media player</strong>: on while the screen is on, off while the TV sleeps; volume (set, up and down), mute, play/pause, next and previous track, turn off, and the TV's apps as sources (choose one to open it). It works with Home Assistant's media cards, voice ("turn the living room TV volume down") and automations.</li>
-  <li><strong>Remote</strong>: <code>remote.send_command</code> with any button by its API name (<code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>, <code>ok</code>, <code>back</code>, <code>home</code>, <code>recents</code>, <code>settings</code>, <code>vol_up</code>, <code>vol_down</code>, <code>mute</code>, <code>play_pause</code>, <code>next</code>, <code>previous</code>, <code>off</code>); <code>text:words</code> types into the TV's focused text box and <code>search:words</code> also presses Enter (in YouTube, it searches). The apps are its activities: <code>remote.turn_on</code> with an <code>activity</code> opens that app.</li>
+  <li><strong>Media player</strong>: on while the screen is on, off while the TV sleeps; volume (set, up and down), mute, play/pause, next and previous track, turn on and off, and the TV's apps as sources (choose one to open it). It works with Home Assistant's media cards, voice ("turn the living room TV volume down") and automations.</li>
+  <li><strong>Remote</strong>: <code>remote.send_command</code> with any button by its API name (<code>up</code>, <code>down</code>, <code>left</code>, <code>right</code>, <code>ok</code>, <code>back</code>, <code>home</code>, <code>recents</code>, <code>settings</code>, <code>vol_up</code>, <code>vol_down</code>, <code>mute</code>, <code>play_pause</code>, <code>next</code>, <code>previous</code>, <code>on</code>, <code>off</code>, <code>power</code>); <code>text:words</code> types into the TV's focused text box and <code>search:words</code> also presses Enter (in YouTube, it searches). The apps are its activities: <code>remote.turn_on</code> with an <code>activity</code> opens that app.</li>
+  <li><strong>Buttons</strong>: Up, Down, Left, Right, OK, Back, Home, Recent apps and Settings, one entity each, for the device page and dashboards (a car head unit or tablet gets no D-pad).</li>
+  <li><strong>Webmote app</strong>: an update entity with the TV's Webmote version and the latest release; <strong>Install</strong> has the TV update itself.</li>
 </ul>
 
 <pre>
@@ -183,7 +186,9 @@ data:
   command: [home, down, ok]
 </pre>
 
-<p>If the TV's address changes, Home Assistant follows it. If someone presses <strong>New PIN</strong> on the TV, Home Assistant asks to pair again. Like everything on Wi-Fi, it can't turn the TV on: a sleeping TV is off the network. For that, use HDMI-CEC (from a device on the same HDMI chain) or the TV's own Google Home or Android TV Remote support, where it has it.</p>
+<p>If the TV's address changes, Home Assistant follows it. If someone presses <strong>New PIN</strong> on the TV, Home Assistant asks to pair again.</p>
+
+<p><strong>Turning the TV on</strong> works from Webmote 0.5.0's <strong>Standby</strong> (on by default, on Webmote's screen on the TV): while the screen is off, Webmote keeps the TV on the network, so Home Assistant and the page's power button can turn it back on. That costs a little power while the TV is off. Android's battery saving (Doze) puts apps to sleep anyway unless they're let off it; <code>install.sh</code> does that for Webmote. A TV that falls asleep off the network can only be woken by its own remote, HDMI-CEC, or its own Google Home support.</p>
 
 <h2>How It Works</h2>
 
@@ -206,6 +211,8 @@ data:
   <li><strong>Typing</strong> finds the text box that has focus on the TV and sets its text, like the Google TV app's keyboard does. YouTube (kids profiles included) draws its own keyboard with no text box behind it, so there Enter opens YouTube's search for what you typed. Netflix also draws its own keyboard but takes no search from outside, so it can't be typed into: use the D-pad on its keyboard.</li>
   <li><strong>Apps</strong> are the ones with a TV launcher entry (on a head unit or tablet, the app drawer's), opened the way the home screen opens them.</li>
   <li><strong>On the network</strong>, Webmote announces itself as <code>_webmote._tcp</code> (mDNS, like a printer or a Chromecast) with the TV's name and a random id, never a key, so Home Assistant can find it.</li>
+  <li><strong>Standby</strong>: while the screen is off, Webmote holds a wake lock and a Wi-Fi lock so the TV stays on the network, and turns the screen back on with Android's own wake-up when asked. On TVs with HDMI-CEC, waking the device usually wakes the TV it's plugged into too.</li>
+  <li><strong>Updates</strong> come from this repository's latest release: Webmote downloads its APK and checks it's Webmote, newer, and signed with the same key before handing it to Android's installer. GitHub is the only other place it contacts.</li>
   <li><strong>TV or touch</strong>: a device that isn't a TV (no Android TV feature, not in TV mode) gets the touch layout, with track controls in place of the D-pad.</li>
 </ul>
 
@@ -217,7 +224,7 @@ data:
   <li>Only devices on your home network (private addresses, and VPN ranges like Tailscale's) can connect at all.</li>
   <li>Every control call needs a key that the TV gives out only for the PIN on its screen. After 5 wrong PINs, pairing locks for 30 seconds, doubling up to 5 minutes. A browser on the pairing page can ask the TV to show the PIN in a corner of its screen for a minute; that shows it to the room, not to the browser.</li>
   <li>The TV stores only hashes of the keys. Pages on other websites can't use your paired browser to control the TV (no CORS, DNS-rebinding protection).</li>
-  <li>No accounts, no cloud, no analytics: nothing leaves your network.</li>
+  <li>No accounts, no cloud, no analytics: nothing about you or your TV leaves your network. The only call out is the daily look at GitHub for a newer Webmote, which you can switch off.</li>
 </ul>
 
 <p><strong>Never forward port 8080 to the internet.</strong> Webmote speaks plain HTTP on the home network, the usual trade-off for a local device. To use it away from home, use a VPN to your home network. Details, and how to report a vulnerability: <a href="SECURITY.md">SECURITY.md</a>.</p>

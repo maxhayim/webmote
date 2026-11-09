@@ -13,7 +13,6 @@ from .coordinator import WebmoteCoordinator
 
 class WebmoteEntity(CoordinatorEntity[WebmoteCoordinator]):
     _attr_has_entity_name = True
-    _attr_name = None
 
     def __init__(self, coordinator: WebmoteCoordinator) -> None:
         super().__init__(coordinator)
@@ -45,6 +44,15 @@ class WebmoteEntity(CoordinatorEntity[WebmoteCoordinator]):
             if name in (a.label, a.pkg):
                 return a.pkg
         return None
+
+    async def turn_on(self) -> None:
+        """Wakes the TV from Webmote's standby; a TV that dropped off the network can't be reached to wake."""
+        if self.status is None:
+            raise HomeAssistantError(
+                f"{self.coordinator.config_entry.title} can't be reached to turn it on: it's asleep off the network. "
+                "Switch on Standby on Webmote's screen on the TV (Webmote 0.5.0 and newer), then turn it off from here."
+            )
+        await self.call("turning on", self.coordinator.client.press("on"))
 
     async def call(self, what: str, coro) -> None:
         """Runs one call to the TV, then refreshes soon; the TV saying no becomes an error in the UI."""

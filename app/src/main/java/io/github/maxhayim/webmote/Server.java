@@ -158,6 +158,9 @@ final class Server {
         } else if (post && p.equals("/api/volume")) {
             int level = Json.integer(r.body, "level");
             ok(out, level >= 0 && service.setVolume(level));
+        } else if (post && p.equals("/api/update")) {
+            Updater.checkNow(service);
+            ok(out, true);
         } else if (get && p.equals("/api/apps")) {
             json(out, 200, Apps.json(service));
         } else if (get && p.startsWith("/api/icon/")) {

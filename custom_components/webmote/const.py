@@ -15,5 +15,7 @@ KEYS = [
     "back", "home", "recents", "settings",
     "vol_up", "vol_down", "mute",
     "play_pause", "next", "previous",
-    "off",
+    "on", "off", "power",
 ]
+
+RELEASES = "https://github.com/maxhayim/webmote/releases"

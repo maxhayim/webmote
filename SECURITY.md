@@ -41,7 +41,12 @@ Responsible disclosure is required.
   timeout, and a small fixed thread pool serves them.
 - **Least privilege.** The accessibility service listens only for which app comes to the front, and reads the
   screen only when the page types, to find the focused text box. It doesn't filter keys, perform gestures or log
-  anything. The app asks for no permissions beyond the network and its accessibility service.
+  anything. Beyond the network and its accessibility service, the app asks only to keep the TV awake while the
+  screen is off (Standby, which can be switched off) and to install its own updates.
+- **Signed updates.** Webmote updates itself only from this repository's latest GitHub release, over HTTPS, and only
+  with an APK that is Webmote, newer, and signed with the same key as the installed one (Android enforces the key
+  too). Automatic updates can be switched off on Webmote's screen; the page's API can ask for an update but can't
+  choose where it comes from.
 
 ---
 

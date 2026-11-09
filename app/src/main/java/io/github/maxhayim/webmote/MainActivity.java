@@ -61,21 +61,39 @@ public class MainActivity extends Activity {
         rows = new LinearLayout(this);
         rows.setOrientation(LinearLayout.VERTICAL);
         right.addView(rows, lp(px(12)));
-        page.addView(right, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+        // Scrolls to the focused row where the rows don't all fit.
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.addView(right);
+        page.addView(scroll, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
         setContentView(page);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Updater.visible = true;
         build();
+        main.postDelayed(tick, 2000);
     }
 
     @Override
     protected void onPause() {
+        Updater.visible = false;
         main.removeCallbacksAndMessages(null);
         super.onPause();
     }
+
+    /** Keeps the update line current while an update runs. */
+    private final Runnable tick = new Runnable() {
+        @Override
+        public void run() {
+            if (updateRow != null && !Updater.status(MainActivity.this).equals(updateShown)) build();
+            main.postDelayed(this, 2000);
+        }
+    };
+    private Row updateRow;
+    private String updateShown;
 
     private void build() {
         int focused = rows.indexOfChild(rows.getFocusedChild());
@@ -124,8 +142,43 @@ public class MainActivity extends Activity {
         }));
         fresh.setValue(newPinArmed ? "OK again" : "");
 
+        boolean standby = Standby.enabled(this);
+        Row power = add(new Row(this, "Standby",
+                "Stays on the network while the TV is off, so Home Assistant and the page can turn it back on.", () -> {
+            boolean on = !Standby.enabled(this);
+            Standby.setEnabled(this, on);
+            if (on && !Standby.exempt(this)) askDozeExemption();
+            build();
+        }));
+        power.setValue(standby ? "On" : "Off");
+        if (standby && !Standby.exempt(this)) {
+            power.setDetail("On, but Android may still put Webmote to sleep while the TV is off: run install.sh again from a computer (see the README).");
+        }
+
+        Row auto = add(new Row(this, "Automatic updates", "Installs new versions of Webmote from GitHub by itself.", () -> {
+            Updater.setAuto(this, !Updater.auto(this));
+            build();
+        }));
+        auto.setValue(Updater.auto(this) ? "On" : "Off");
+        updateShown = Updater.status(this);
+        updateRow = add(new Row(this, "Update now", updateShown.isEmpty() ? "Checks GitHub for a newer Webmote." : updateShown, () -> {
+            Updater.checkNow(this);
+            build();
+        }));
+        updateRow.setValue(BuildConfig.VERSION_NAME);
+
         int keep = focused >= 0 && focused < rows.getChildCount() ? focused : 0;
         rows.getChildAt(keep).requestFocus();
+    }
+
+    /** Android's own "let this app run in the background?" prompt, where the TV has it. */
+    private void askDozeExemption() {
+        try {
+            startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    android.net.Uri.parse("package:" + getPackageName())));
+        } catch (ActivityNotFoundException | SecurityException e) {
+            status.setText("This TV has no screen for it. From a computer: run install.sh again (see the README).");
+        }
     }
 
     /** The QR code of {@code url}, white on black with a quiet zone, or none. */

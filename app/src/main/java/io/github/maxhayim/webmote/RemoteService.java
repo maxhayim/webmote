@@ -51,6 +51,7 @@ public class RemoteService extends AccessibilityService {
     private Server server;
     private PinCard pinCard;
     private Nsd nsd;
+    private Standby standby;
     private volatile String frontPackage;
 
     static synchronized Auth auth(Context c) {
@@ -79,6 +80,15 @@ public class RemoteService extends AccessibilityService {
         server = new Server(this, auth(this));
         nsd = new Nsd(this);
         server.start(PORT, port -> nsd.start(tvName(), port, deviceId(this), kind()));
+        standby = new Standby(this);
+        standby.start();
+        Updater.schedule(this);
+    }
+
+    /** Standby switched on or off on Webmote's screen. */
+    void standbyChanged() {
+        if (Standby.enabled(this)) standby.hold();
+        else standby.release();
     }
 
     @Override
@@ -95,6 +105,7 @@ public class RemoteService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        if (standby != null) standby.stop();
         if (nsd != null) nsd.stop();
         if (server != null) server.stop();
         if (pinCard != null) pinCard.hide();
@@ -145,6 +156,8 @@ public class RemoteService extends AccessibilityService {
             case "home": return performGlobalAction(GLOBAL_ACTION_HOME);
             case "recents": return performGlobalAction(GLOBAL_ACTION_RECENTS);
             case "off": return performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
+            case "on": return standby.wake();
+            case "power": return isScreenOn() ? performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN) : standby.wake();
             case "vol_up": return volume(audio, AudioManager.ADJUST_RAISE);
             case "vol_down": return volume(audio, AudioManager.ADJUST_LOWER);
             case "mute": return volume(audio, AudioManager.ADJUST_TOGGLE_MUTE);
@@ -342,6 +355,11 @@ public class RemoteService extends AccessibilityService {
         }
     }
 
+    private boolean isScreenOn() {
+        PowerManager power = getSystemService(PowerManager.class);
+        return power == null || power.isInteractive();
+    }
+
     /** A media key, to whichever app is playing. */
     private static boolean media(AudioManager audio, int code) {
         long t = SystemClock.uptimeMillis();
@@ -383,12 +401,14 @@ public class RemoteService extends AccessibilityService {
                 // Uninstalled since.
             }
         }
-        PowerManager power = getSystemService(PowerManager.class);
         return "{\"tv\":" + Json.quote(tvName())
                 + ",\"id\":" + Json.quote(deviceId(this))
                 + ",\"kind\":" + Json.quote(kind())
                 + ",\"version\":" + Json.quote(BuildConfig.VERSION_NAME)
-                + ",\"screen\":" + (power == null || power.isInteractive())
+                + ",\"screen\":" + isScreenOn()
+                + ",\"standby\":" + Standby.enabled(this)
+                + ",\"latest\":" + Json.quote(Updater.latest(this))
+                + ",\"update\":" + Json.quote(Updater.status(this))
                 + ",\"app\":" + Json.quote(app)
                 + ",\"pkg\":" + Json.quote(pkg == null ? "" : pkg)
                 + ",\"volume\":" + audio.getStreamVolume(AudioManager.STREAM_MUSIC)

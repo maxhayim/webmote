@@ -44,5 +44,41 @@
       "update_webmote": "Update Webmote on the TV to 0.4.0 or newer, then add it again.",
       "wrong_device": "That's a different TV from the one being paired again."
     }
+  },
+  "entity": {
+    "button": {
+      "up": {
+        "name": "Up"
+      },
+      "down": {
+        "name": "Down"
+      },
+      "left": {
+        "name": "Left"
+      },
+      "right": {
+        "name": "Right"
+      },
+      "ok": {
+        "name": "OK"
+      },
+      "back": {
+        "name": "Back"
+      },
+      "home": {
+        "name": "Home"
+      },
+      "recents": {
+        "name": "Recent apps"
+      },
+      "settings": {
+        "name": "Settings"
+      }
+    },
+    "update": {
+      "app": {
+        "name": "Webmote app"
+      }
+    }
   }
 }

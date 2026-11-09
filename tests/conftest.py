@@ -15,15 +15,18 @@ KEY = "a" * 48
 
 
 class FakeTv:
-    """Answers like Webmote 0.4.0 (docs/api.md), and records what it was asked."""
+    """Answers like Webmote 0.5.0 (docs/api.md), and records what it was asked."""
 
     def __init__(self) -> None:
         self.status = {
             "tv": "Living Room TV",
             "id": "0123456789abcdef",
             "kind": "tv",
-            "version": "0.4.0",
+            "version": "0.5.0",
             "screen": True,
+            "standby": True,
+            "latest": "0.5.0",
+            "update": "Up to date",
             "app": "YouTube",
             "pkg": "com.google.android.youtube.tv",
             "volume": 50,
@@ -38,6 +41,7 @@ class FakeTv:
         self.texts: list[dict] = []
         self.launched: list[str] = []
         self.pin_shown = 0
+        self.updates = 0
         self.key_valid = True
 
     def app(self) -> web.Application:
@@ -50,6 +54,7 @@ class FakeTv:
         app.router.add_post("/api/volume", self.guard(self.volume))
         app.router.add_post("/api/launch", self.guard(self.launch))
         app.router.add_post("/api/text", self.guard(self.text))
+        app.router.add_post("/api/update", self.guard(self.update))
         return app
 
     def guard(self, handler):
@@ -83,6 +88,8 @@ class FakeTv:
             self.status["muted"] = not self.status["muted"]
         if k == "off":
             self.status["screen"] = False
+        if k == "on":
+            self.status["screen"] = True
         return web.json_response({"ok": True})
 
     async def volume(self, request: web.Request) -> web.Response:
@@ -93,6 +100,11 @@ class FakeTv:
         pkg = (await request.json())["pkg"]
         self.launched.append(pkg)
         return web.json_response({"ok": pkg in [a["pkg"] for a in self.apps]})
+
+    async def update(self, request: web.Request) -> web.Response:
+        self.updates += 1
+        self.status["update"] = "Downloading 0.6.0…"
+        return web.json_response({"ok": True})
 
     async def text(self, request: web.Request) -> web.Response:
         self.texts.append(await request.json())

@@ -318,16 +318,25 @@ input:focus { border-color: var(--accent); }
     b.addEventListener("click", e => { if (e.detail === 0) press(k); }); // keyboard activation
   });
 
-  // Hold to turn off, so a stray tap doesn't.
+  // Hold to turn off, so a stray tap doesn't; a tap turns it back on (in standby, which keeps Webmote reachable).
+  let screenOn = true, standby = false;
   (() => {
     const p = $("power"); let t;
     const cancel = () => { clearTimeout(t); p.classList.remove("holding"); };
     p.addEventListener("pointerdown", e => {
-      e.preventDefault(); p.classList.add("holding");
-      t = setTimeout(() => { p.classList.remove("holding"); press("off"); toast("Turning the TV off. Turn it back on with its remote."); }, 900);
+      e.preventDefault();
+      if (!screenOn) return;
+      p.classList.add("holding");
+      t = setTimeout(() => {
+        p.classList.remove("holding"); press("off"); screenOn = false;
+        toast(standby ? "Turning the TV off. Tap the power button to turn it back on." : "Turning the TV off. Turn it back on with its remote.");
+      }, 900);
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach(ev => p.addEventListener(ev, cancel));
-    p.addEventListener("click", e => { if (e.detail !== 0) toast("Hold to turn off"); });
+    p.addEventListener("click", e => {
+      if (!screenOn) { press("on"); screenOn = true; toast("Turning the TV on"); }
+      else if (e.detail !== 0) toast("Hold to turn off");
+    });
   })();
 
   // Desktop keyboard.
@@ -357,6 +366,8 @@ input:focus { border-color: var(--accent); }
     try {
       const s = await (await api("/api/status")).json();
       setOnline(true);
+      screenOn = s.screen !== false; standby = !!s.standby;
+      $("power").title = screenOn ? "Hold to turn off" : "Turn on";
       $("tvName").textContent = s.tv || "TV";
       document.title = `${s.tv || "TV"} - Webmote`; // follows a rename without a reload
       $("appName").textContent = s.app || "Connected";

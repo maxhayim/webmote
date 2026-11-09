@@ -1,4 +1,4 @@
-"""Webmote: a TV (or car head unit) running Webmote, as a media player and a remote in Home Assistant."""
+"""Webmote: a TV (or car head unit) running Webmote, as a media player, a remote, its buttons and its updates in Home Assistant."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .api import WebmoteClient
 from .const import CONF_KEY
 from .coordinator import WebmoteConfigEntry, WebmoteCoordinator
 
-PLATFORMS = [Platform.MEDIA_PLAYER, Platform.REMOTE]
+PLATFORMS = [Platform.BUTTON, Platform.MEDIA_PLAYER, Platform.REMOTE, Platform.UPDATE]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: WebmoteConfigEntry) -> bool:

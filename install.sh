@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Webmote on the TV, switch on its remote service and open it (it shows the address and PIN).
 #   TV_HOST=<tv ip> ./install.sh                     # builds from this source
-#   TV_HOST=<tv ip> APK=Webmote-0.4.1.apk ./install.sh   # or installs a release APK
+#   TV_HOST=<tv ip> APK=Webmote-0.5.0.apk ./install.sh   # or installs a release APK
 # Uses adb. Where macOS blocks the stock adb, set CLEANYOURTV to a clone of github.com/Gathin23/cleanyourtv with
 # its tools set up (tools/venv), and its tools/tv.py is used instead.
 set -euo pipefail
@@ -37,7 +37,8 @@ if [ -z "${APK:-}" ]; then
 fi
 
 push "$APK" /data/local/tmp/webmote.apk
-OUT=$(tv 'pm install -r /data/local/tmp/webmote.apk; rm -f /data/local/tmp/webmote.apk')
+# As its own installer, so Webmote's later self-updates install without asking on Android 12 and newer.
+OUT=$(tv "pm install -r -i $PKG /data/local/tmp/webmote.apk; rm -f /data/local/tmp/webmote.apk")
 echo "$OUT"
 case "$OUT" in *Success*) ;; *) echo "ERROR: pm install failed" >&2; exit 1 ;; esac
 
@@ -49,5 +50,7 @@ case "$CUR" in
   *) tv settings put secure enabled_accessibility_services "$CUR:$SERVICE"; echo "remote service on" ;;
 esac
 tv settings put secure accessibility_enabled 1
+# Standby: lets Webmote stay on the network while the TV is off (Doze would put it to sleep), so it can turn back on.
+tv dumpsys deviceidle whitelist +$PKG >/dev/null && echo "standby allowed"
 tv "am start -n $PKG/.MainActivity >/dev/null; echo opened"
 echo "Installed. Open the address shown on the TV on your phone or computer, and type the PIN."
