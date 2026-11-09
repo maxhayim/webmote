@@ -8,7 +8,7 @@ on:
     branches: [ main ]
     paths:
       - "app/src/main/assets/**"
-      - "assets/logo.png"
+      - "web/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -38,9 +38,7 @@ jobs:
           sed -e 's/%TV% - Webmote/Webmote/g' -e 's/%TV%/Webmote/g' \
             app/src/main/assets/manifest.webmanifest > _site/manifest.webmanifest
           if grep -q '%TV%\|%KIND%' _site/index.html _site/manifest.webmanifest; then echo "unfilled placeholder" >&2; exit 1; fi
-          cp assets/logo.png _site/icon-512.png
-          convert assets/logo.png -resize 192x192 _site/icon-192.png
-          convert assets/logo.png -resize 180x180 -background '#0e1016' -flatten _site/apple-touch-icon.png
+          cp web/icon-512.png web/icon-192.png web/apple-touch-icon.png _site/
           touch _site/.nojekyll
 
       - name: Upload
