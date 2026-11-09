@@ -407,6 +407,7 @@ public class RemoteService extends AccessibilityService {
                 + ",\"version\":" + Json.quote(BuildConfig.VERSION_NAME)
                 + ",\"screen\":" + isScreenOn()
                 + ",\"standby\":" + Standby.enabled(this)
+                + ",\"updates\":" + Json.quote(Updater.mode(this))
                 + ",\"latest\":" + Json.quote(Updater.latest(this))
                 + ",\"update\":" + Json.quote(Updater.status(this))
                 + ",\"app\":" + Json.quote(app)

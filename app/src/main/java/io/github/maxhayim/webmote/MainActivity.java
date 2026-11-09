@@ -155,11 +155,13 @@ public class MainActivity extends Activity {
             power.setDetail("On, but Android may still put Webmote to sleep while the TV is off: run install.sh again from a computer (see the README).");
         }
 
-        Row auto = add(new Row(this, "Automatic updates", "Installs new versions of Webmote from GitHub by itself.", () -> {
-            Updater.setAuto(this, !Updater.auto(this));
+        String mode = Updater.mode(this);
+        Row updates = add(new Row(this, "Updates", modeDetail(mode), () -> {
+            String m = Updater.mode(this);
+            Updater.setMode(this, Updater.AUTO.equals(m) ? Updater.NOTIFY : Updater.NOTIFY.equals(m) ? Updater.OFF : Updater.AUTO);
             build();
         }));
-        auto.setValue(Updater.auto(this) ? "On" : "Off");
+        updates.setValue(Updater.AUTO.equals(mode) ? "Automatic" : Updater.NOTIFY.equals(mode) ? "Notify only" : "Off");
         updateShown = Updater.status(this);
         updateRow = add(new Row(this, "Update now", updateShown.isEmpty() ? "Checks GitHub for a newer Webmote." : updateShown, () -> {
             Updater.checkNow(this);
@@ -169,6 +171,12 @@ public class MainActivity extends Activity {
 
         int keep = focused >= 0 && focused < rows.getChildCount() ? focused : 0;
         rows.getChildAt(keep).requestFocus();
+    }
+
+    private static String modeDetail(String mode) {
+        if (Updater.AUTO.equals(mode)) return "Installs new versions of Webmote from GitHub by itself.";
+        if (Updater.NOTIFY.equals(mode)) return "Checks GitHub daily and tells Home Assistant; installs only with Update now.";
+        return "Never checks by itself; Update now still works.";
     }
 
     /** Android's own "let this app run in the background?" prompt, where the TV has it. */

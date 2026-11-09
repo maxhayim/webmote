@@ -35,8 +35,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
- * Updates Webmote from its GitHub releases: checks once a day and, unless switched off on Webmote's screen, downloads
- * and installs a newer release. The install is silent on Android 12 and newer once Webmote installed itself (install.sh
+ * Updates Webmote from its GitHub releases. Set on Webmote's screen: Automatic checks once a day and downloads and
+ * installs a newer release; Notify only checks, for the status and Home Assistant, and installs when asked; Off never
+ * contacts GitHub unless asked. The install is silent on Android 12 and newer once Webmote installed itself (install.sh
  * makes it its own installer); elsewhere Android asks once on screen, which Webmote shows only when someone asked for
  * the update or is on Webmote's screen, never over a show. GitHub is the only place it contacts, and only for this.
  */
@@ -57,12 +58,15 @@ final class Updater {
         return c.getApplicationContext().getSharedPreferences("updater", Context.MODE_PRIVATE);
     }
 
-    static boolean auto(Context c) {
-        return prefs(c).getBoolean("auto", true);
+    /** Automatic: checks daily and installs. Notify: checks daily, installs only when asked. Off: never checks by itself. */
+    static final String AUTO = "auto", NOTIFY = "notify", OFF = "off";
+
+    static String mode(Context c) {
+        return prefs(c).getString("mode", AUTO);
     }
 
-    static void setAuto(Context c, boolean on) {
-        prefs(c).edit().putBoolean("auto", on).apply();
+    static void setMode(Context c, String mode) {
+        prefs(c).edit().putString("mode", mode).apply();
     }
 
     /** The latest release's version, as last seen ("" before the first check). */
@@ -98,9 +102,10 @@ final class Updater {
         new Thread(() -> run(app, true), "webmote-update").start();
     }
 
-    /** Blocking. {@code asked}: someone asked, so it runs even with automatic updates off. */
+    /** Blocking. {@code asked}: someone asked, so it checks and installs whatever the mode. */
     static void run(Context c, boolean asked) {
-        if (!asked && !auto(c)) return;
+        String mode = mode(c);
+        if (!asked && OFF.equals(mode)) return;
         synchronized (busy) {
             String version, apk;
             try {
@@ -125,7 +130,8 @@ final class Updater {
                 setStatus(c, "Version " + version + " has no app file yet");
                 return;
             }
-            install(c, version, apk);
+            if (asked || AUTO.equals(mode)) install(c, version, apk);
+            else setStatus(c, "Version " + version + " is available");
         }
     }
 

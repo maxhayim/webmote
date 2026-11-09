@@ -54,7 +54,7 @@
   <li><strong>Home Assistant</strong>: an integration (install with HACS) that finds the TVs on the network, pairs with the PIN, and adds each as a media player (on/off, volume, mute, play/pause, tracks, apps as sources), a remote (every button, typing and searching), a button for each remote key, and Webmote's updates</li>
   <li><strong>QR code</strong>: Webmote's screen shows one for its address, so a phone opens the remote by pointing its camera at it</li>
   <li><strong>Turn off and on</strong>: hold the power button for a second to turn the TV off, so a stray tap doesn't; tap it to turn the TV back on (Standby keeps Webmote on the network while the TV is off)</li>
-  <li><strong>Updates itself</strong> from this repository's releases, once a day; switch it off on Webmote's screen. Silent on Android 12 and newer when installed with <code>install.sh</code>; elsewhere the TV asks once, only when you open Webmote's screen or ask for the update</li>
+  <li><strong>Updates itself</strong> from this repository's releases, once a day. On Webmote's screen, <strong>Updates</strong> is Automatic, Notify only (checks, and Home Assistant shows the update, but installs only when you ask) or Off (never checks by itself). Silent on Android 12 and newer when installed with <code>install.sh</code>; elsewhere the TV asks once, only when you open Webmote's screen or ask for the update</li>
   <li><strong>Apps sheet</strong>: every app on the TV with its banner; tap one to open it</li>
   <li><strong>Keyboard</strong>: type on your phone and the text appears in the TV's focused search or text box, then Enter to search</li>
   <li><strong>Now playing</strong>: the TV's name, the app in front, and the volume, kept up to date</li>
@@ -224,7 +224,7 @@ data:
   <li>Only devices on your home network (private addresses, and VPN ranges like Tailscale's) can connect at all.</li>
   <li>Every control call needs a key that the TV gives out only for the PIN on its screen. After 5 wrong PINs, pairing locks for 30 seconds, doubling up to 5 minutes. A browser on the pairing page can ask the TV to show the PIN in a corner of its screen for a minute; that shows it to the room, not to the browser.</li>
   <li>The TV stores only hashes of the keys. Pages on other websites can't use your paired browser to control the TV (no CORS, DNS-rebinding protection).</li>
-  <li>No accounts, no cloud, no analytics: nothing about you or your TV leaves your network. The only call out is the daily look at GitHub for a newer Webmote, which you can switch off.</li>
+  <li>No accounts, no cloud, no analytics: nothing about you or your TV leaves your network. The only call out is the daily look at GitHub for a newer Webmote, which you can switch off (Updates: Off).</li>
 </ul>
 
 <p><strong>Never forward port 8080 to the internet.</strong> Webmote speaks plain HTTP on the home network, the usual trade-off for a local device. To use it away from home, use a VPN to your home network. Details, and how to report a vulnerability: <a href="SECURITY.md">SECURITY.md</a>.</p>

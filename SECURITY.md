@@ -45,7 +45,7 @@ Responsible disclosure is required.
   screen is off (Standby, which can be switched off) and to install its own updates.
 - **Signed updates.** Webmote updates itself only from this repository's latest GitHub release, over HTTPS, and only
   with an APK that is Webmote, newer, and signed with the same key as the installed one (Android enforces the key
-  too). Automatic updates can be switched off on Webmote's screen; the page's API can ask for an update but can't
+  too). On Webmote's screen, Updates can be set to Notify only (checks, installs only when asked) or Off (never checks by itself); the page's API can ask for an update but can't
   choose where it comes from.
 
 ---
